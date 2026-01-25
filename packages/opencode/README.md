@@ -25,6 +25,8 @@ cp opencode.json /path/to/your/project/
 | `/bbq.prep <ticket>` | 🔪 Mise en place (technical planning) |
 | `/bbq.fire <ticket>` | 🔥 Fire the grill (code, test, PR) |
 | `/bbq.taste <ticket>` | 👨‍🍳 Address the critics (review comments) |
+| `/bbq.rules` | 📜 Set up project house rules |
+| `/bbq.learn` | 📝 Write down learnings from current session |
 
 ## Kitchen Techniques (Skills)
 
@@ -35,6 +37,7 @@ cp opencode.json /path/to/your/project/
 | `git-commit` | Conventional commits with ticket refs |
 | `git-find-ticket-branch` | Find branch by ticket ID |
 | `progress-doc` | Track progress in `docs/progress/` |
+| `learnings` | Manage project learnings in `docs/learnings/` |
 
 ## The Health Inspector (Plugins)
 
@@ -53,7 +56,32 @@ Backlog → In Research → Ready to Plan → Planning → Ready → In Progress
 |----------------|-------|
 | Command behavior | `.opencode/commands/*.md` |
 | Kitchen techniques | `.opencode/skills/*/SKILL.md` |
+| House rules template | `.opencode/templates/HOUSE_RULES.md` |
 | MCP connections | `opencode.json` |
+
+## Knowledge Management
+
+BBQ Party includes a learnings system to capture and reuse project knowledge:
+
+```
+docs/learnings/
+├── gotchas.md       # Traps and pitfalls
+├── patterns.md      # How things are done here
+├── decisions.md     # Architectural choices and rationale
+└── discoveries.md   # How things work in this codebase
+```
+
+- `/bbq.fire` automatically extracts learnings after implementation
+- `/bbq.learn` manually captures learnings from any conversation
+- `/bbq.pantry`, `/bbq.prep`, `/bbq.fire` read learnings before starting work
+
+## House Rules
+
+Run `/bbq.rules` to set up project-wide development principles:
+
+- Creates `.opencode/HOUSE_RULES.md`
+- Interactively gathers core principles and standards
+- Provides governance for how the project should be built
 
 ## Ingredients Required
 

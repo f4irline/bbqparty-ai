@@ -53,11 +53,13 @@ BBQ Party is a workflow automation toolkit that turns your Linear tickets into a
 ## The Menu (Commands)
 
 ```
-/bbq.status STU-15      Check the ticket
+/bbq.ticket STU-15      Check the ticket
 /bbq.pantry STU-15      What's in the pantry? (research)
 /bbq.prep STU-15        Mise en place (planning)
 /bbq.fire STU-15        Fire! (code, test, PR)
 /bbq.taste STU-15       Address the critics
+/bbq.rules              Set up house rules
+/bbq.learn              Write down what you learned
 ```
 
 ## Kitchen Layout
@@ -181,7 +183,8 @@ Backlog → In Research → Ready to Plan → Planning → Ready → In Progress
 Drop this into any project. It's got everything your sous chef needs:
 
 - **Commands** — The menu items (`/bbq.pantry`, `/bbq.prep`, `/bbq.fire`, etc.)
-- **Skills** — Kitchen techniques (branching, commits, progress tracking)
+- **Skills** — Kitchen techniques (branching, commits, progress tracking, learnings)
+- **Templates** — House rules template for project standards
 - **Plugins** — Auto-validation after commits (the health inspector)
 - **MCP Config** — Connection to Linear and GitHub
 
