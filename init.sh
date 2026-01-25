@@ -195,20 +195,6 @@ else
 	echo -e "  ${GREEN}✓ Config installed${NC}"
 fi
 
-# Add .pem to .gitignore if not already there
-if [ -f "$TARGET_PATH/.gitignore" ]; then
-	if ! grep -q '^\*\.pem$' "$TARGET_PATH/.gitignore" 2>/dev/null; then
-		echo "" >>"$TARGET_PATH/.gitignore"
-		echo "# Secret sauce (keep it secret!)" >>"$TARGET_PATH/.gitignore"
-		echo "*.pem" >>"$TARGET_PATH/.gitignore"
-		echo -e "  ${GREEN}✓ Secret sauce protected (.gitignore)${NC}"
-	fi
-else
-	echo "# Secret sauce (keep it secret!)" >"$TARGET_PATH/.gitignore"
-	echo "*.pem" >>"$TARGET_PATH/.gitignore"
-	echo -e "  ${GREEN}✓ Created .gitignore${NC}"
-fi
-
 echo ""
 echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║              🍖 KITCHEN IS OPEN! 🍖                          ║${NC}"
