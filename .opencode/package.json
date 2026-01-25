@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "devDependencies": {
+    "@opencode-ai/plugin": "1.1.34"
+  }
+}
