@@ -7,77 +7,89 @@ OpenCode-powered workflow automation for Linear tickets and GitHub PRs.
 This project uses [OpenCode](https://opencode.ai) to automate the software development lifecycle from ticket research to PR review. It integrates with:
 
 - **Linear** - Issue tracking and status management
-- **GitHub** - Pull requests and code review
+- **GitHub** - Pull requests and code review (via GitHub App for bot identity)
 
 ## Prerequisites
 
 1. [OpenCode](https://opencode.ai) installed
 2. [Bun](https://bun.sh) installed (for plugins)
-3. Linear MCP server configured
-4. GitHub MCP server configured
+3. [Node.js](https://nodejs.org) >= 18 (for GitHub App MCP server)
+4. Linear API key
+5. GitHub App (for bot identity) - see setup below
 
 ## Setup
 
-### 1. Configure MCP Servers
+### 1. Configure Linear MCP
 
-MCP servers can be configured either **globally** (recommended for tools you use across projects) or **per-project**.
+Linear uses a remote MCP server with your API key.
 
-#### Option A: Global Configuration (Recommended)
-
-Edit `~/.config/opencode/opencode.json`:
-
-```json
-{
-  "mcp": {
-    "linear": {
-      "type": "remote",
-      "url": "https://mcp.linear.app/mcp",
-      "headers": {
-        "Authorization": "Bearer {env:BBQ_LINEAR_API_KEY}"
-      },
-      "enabled": true
-    },
-    "github": {
-      "type": "remote",
-      "url": "https://api.githubcopilot.com/mcp/",
-      "headers": {
-        "Authorization": "Bearer {env:BBQ_GITHUB_TOKEN}"
-      },
-      "enabled": true
-    }
-  }
-}
-```
-
-This makes Linear and GitHub available in all your projects. The `{env:VAR}` syntax reads from environment variables.
-
-#### Option B: Per-Project Configuration
-
-Add the MCP config to your project's `opencode.json`. This is useful if:
-- You want to share the config with your team via git
-- You need project-specific MCP settings
-- You want to keep credentials isolated per project
-
-### 2. Set Environment Variables
-
-Get your API tokens and add them to your shell profile (`~/.zshrc`, `~/.bashrc`, etc.):
-
-```bash
-export BBQ_LINEAR_API_KEY="your-linear-api-key"
-export BBQ_GITHUB_TOKEN="your-github-token"
-```
-
-**Linear:**
+**Get your Linear API key:**
 1. Go to [Linear Settings → API](https://linear.app/settings/api)
 2. Create a new personal API key
 3. Copy the token
 
-**GitHub:**
-1. Go to [GitHub Settings → Developer settings → Personal access tokens](https://github.com/settings/tokens)
-2. Generate a new token with `repo` and `read:org` scopes
-3. Copy the token
+**Set environment variable:**
+```bash
+export BBQ_LINEAR_API_KEY="your-linear-api-key"
+```
 
-### 3. Start OpenCode
+### 2. Configure GitHub App MCP
+
+This project includes a custom GitHub App MCP server so actions appear as a bot, not your personal account.
+
+#### 2.1 Create a GitHub App
+
+1. Go to **GitHub Settings → Developer settings → GitHub Apps → New GitHub App**
+2. Fill in:
+   - **GitHub App name**: `BBQ Party Bot` (or your preferred name)
+   - **Homepage URL**: Your project URL
+   - **Webhook**: Uncheck "Active" (not needed)
+3. Set **Permissions**:
+   - **Repository permissions:**
+     - Contents: Read and write
+     - Issues: Read and write
+     - Pull requests: Read and write
+     - Metadata: Read-only
+4. Click **Create GitHub App**
+5. Note your **App ID**
+6. Click **Generate a private key** (downloads a `.pem` file)
+
+#### 2.2 Install the App
+
+1. From your GitHub App settings, click **Install App**
+2. Choose your account or organization
+3. Select which repositories to grant access
+4. Note the **Installation ID** from the URL after installing:
+   - URL: `https://github.com/settings/installations/12345678`
+   - Installation ID: `12345678`
+
+#### 2.3 Build the MCP Server
+
+```bash
+cd mcp/github-app
+pnpm install
+pnpm run build
+```
+
+#### 2.4 Set Environment Variables
+
+```bash
+export BBQ_GITHUB_APP_ID="123456"
+export BBQ_GITHUB_APP_KEY_PATH="/path/to/your-app.private-key.pem"
+export BBQ_GITHUB_APP_INSTALLATION_ID="12345678"
+```
+
+Add these to your shell profile (`~/.zshrc`, `~/.bashrc`, etc.) for persistence.
+
+### 3. MCP Configuration
+
+The `opencode.json` is pre-configured to use:
+- **Linear**: Remote MCP server
+- **GitHub**: Local GitHub App MCP server
+
+You can also configure MCP globally in `~/.config/opencode/opencode.json` if you want to use these across multiple projects.
+
+### 4. Start OpenCode
 
 ```bash
 opencode
@@ -137,22 +149,29 @@ Automatically runs after `git commit`:
 ## Project Structure
 
 ```
-.opencode/
-├── commands/           # Slash commands
-│   ├── bbq.research.md
-│   ├── bbq.plan.md
-│   ├── bbq.implement.md
-│   ├── bbq.review.md
-│   └── bbq.status.md
-├── plugins/            # Automation hooks (auto-loaded)
-│   └── validate-changes.ts
-├── skills/             # Reusable agent instructions
-│   ├── git-branch-create/SKILL.md
-│   ├── git-commit/SKILL.md
-│   ├── git-find-ticket-branch/SKILL.md
-│   ├── git-push-remote/SKILL.md
-│   └── progress-doc/SKILL.md
-└── package.json        # Plugin dependencies
+.
+├── opencode.json           # MCP configuration
+├── mcp/
+│   └── github-app/         # GitHub App MCP server
+│       ├── src/index.ts    # Server implementation
+│       ├── package.json
+│       └── README.md       # Detailed setup instructions
+└── .opencode/
+    ├── commands/           # Slash commands
+    │   ├── bbq.research.md
+    │   ├── bbq.plan.md
+    │   ├── bbq.implement.md
+    │   ├── bbq.review.md
+    │   └── bbq.status.md
+    ├── plugins/            # Automation hooks (auto-loaded)
+    │   └── validate-changes.ts
+    ├── skills/             # Reusable agent instructions
+    │   ├── git-branch-create/SKILL.md
+    │   ├── git-commit/SKILL.md
+    │   ├── git-find-ticket-branch/SKILL.md
+    │   ├── git-push-remote/SKILL.md
+    │   └── progress-doc/SKILL.md
+    └── package.json        # Plugin dependencies
 ```
 
 ## Linear Workflow Setup
@@ -189,6 +208,13 @@ Backlog → In Research → Ready to Plan → Planning → Ready → In Progress
         /bbq.research  /bbq.research   /bbq.plan  /bbq.plan  /bbq.implement /bbq.implement
          (start)         (end)         (start)     (end)       (start)       (end)
 ```
+
+## Security Notes
+
+- **Never commit your GitHub App private key** - Add `*.pem` to `.gitignore`
+- **Use environment variables** - Don't hardcode API keys or tokens
+- **Limit GitHub App permissions** - Only grant what's needed
+- **Limit repository access** - Install the app only on repos that need it
 
 ## Customization
 

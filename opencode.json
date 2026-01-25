@@ -10,10 +10,12 @@
       "enabled": true
     },
     "github": {
-      "type": "remote",
-      "url": "https://api.githubcopilot.com/mcp/",
-      "headers": {
-        "Authorization": "Bearer {env:BBQ_GITHUB_TOKEN}"
+      "type": "local",
+      "command": ["node", "mcp/github-app/dist/index.js"],
+      "environment": {
+        "GITHUB_APP_ID": "{env:BBQ_GITHUB_APP_ID}",
+        "GITHUB_APP_PRIVATE_KEY_PATH": "{env:BBQ_GITHUB_APP_KEY_PATH}",
+        "GITHUB_APP_INSTALLATION_ID": "{env:BBQ_GITHUB_APP_INSTALLATION_ID}"
       },
       "enabled": true
     }
