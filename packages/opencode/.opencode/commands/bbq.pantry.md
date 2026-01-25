@@ -8,16 +8,18 @@ Follow these steps:
 
 1. Move the ticket to "In Research" status using Linear MCP
 2. Read the full ticket details from Linear using Linear MCP
-3. Research the codebase to understand the best approach for implementing this ticket
-4. Ask clarifying questions if you need more information about:
+3. **Check existing learnings**: If `docs/learnings/` exists, scan all files for learnings relevant to this ticket's domain. These may inform your research and save time.
+4. Research the codebase to understand the best approach for implementing this ticket
+5. Ask clarifying questions if you need more information about:
    - Requirements or acceptance criteria
    - Technical constraints or preferences
    - Priority or timeline considerations
-5. Document your research findings as a comment on the ticket in Linear, including:
+6. Document your research findings as a comment on the ticket in Linear, including:
    - Summary of the current state
    - Proposed approach(es)
    - Potential risks or considerations
    - Any dependencies identified
-6. Move the ticket to "Ready to Plan" status using Linear MCP
+   - **Relevant learnings** from `docs/learnings/` if any apply
+7. Move the ticket to "Ready to Plan" status using Linear MCP
 
 Be thorough but concise in your research documentation.
