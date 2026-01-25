@@ -21,16 +21,32 @@ This project uses [OpenCode](https://opencode.ai) to automate the software devel
 
 ### 1. Configure Linear MCP
 
-Linear uses a remote MCP server with your API key.
+Linear uses a remote MCP server with an API key. For bot identity, we recommend using a **service account**.
 
-**Get your Linear API key:**
+#### Option A: Service Account (Recommended for Bot Identity)
+
+Create a dedicated Linear user so actions appear as a bot, not your personal account:
+
+1. **Create a new Linear account** with an email like `bot@yourcompany.com` or `bbq-bot@yourcompany.com`
+2. **Invite to your workspace** via Linear Settings → Members
+3. **Log in as the bot account** and go to [Settings → API](https://linear.app/settings/api)
+4. **Create an API key** from the bot account
+5. **Use that API key** - actions will appear as "BBQ Bot" (or whatever you named the account)
+
+> **Note:** This consumes a seat in your Linear plan, but provides clear attribution for automated actions.
+
+#### Option B: Personal API Key
+
+If you don't need bot identity, use your personal API key:
+
 1. Go to [Linear Settings → API](https://linear.app/settings/api)
 2. Create a new personal API key
 3. Copy the token
 
-**Set environment variable:**
+#### Set Environment Variable
+
 ```bash
-export BBQ_LINEAR_API_KEY="your-linear-api-key"
+export BBQ_LINEAR_API_KEY="lin_api_xxxxxx"
 ```
 
 ### 2. Configure GitHub App MCP
@@ -84,6 +100,7 @@ Add these to your shell profile (`~/.zshrc`, `~/.bashrc`, etc.) for persistence.
 ### 3. MCP Configuration
 
 The `opencode.json` is pre-configured to use:
+
 - **Linear**: Remote MCP server
 - **GitHub**: Local GitHub App MCP server
 
