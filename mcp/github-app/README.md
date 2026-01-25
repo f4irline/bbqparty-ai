@@ -1,13 +1,15 @@
-# GitHub App MCP Server
+# 🔥 The Grill — GitHub App MCP Server
 
-A Model Context Protocol (MCP) server that authenticates as a GitHub App, allowing AI agents to interact with GitHub as a bot rather than a personal user account.
+A Model Context Protocol (MCP) server that authenticates as a GitHub App. This is what lets your AI sous chef interact with GitHub as a bot, not as you personally.
+
+> *The grill does the cooking. You take the credit.*
 
 ## Features
 
-- **GitHub App Authentication** - Actions appear as your app, not your personal account
-- **Pull Request Management** - Create, list, search, and comment on PRs
-- **Issue Management** - Create and manage issues
-- **Repository Access** - List branches, read files, get repo info
+- **Bot Identity** — Actions appear as your app, not your personal account
+- **Pull Request Management** — Create, list, search, and comment on PRs
+- **Issue Management** — Create and manage issues
+- **Repository Access** — List branches, read files, get repo info
 
 ## Available Tools
 
@@ -160,13 +162,17 @@ If running locally without Docker:
 }
 ```
 
-## Security Notes
+## Security Notes (Kitchen Rules)
 
-- **Never commit your private key** - Add `*.pem` to `.gitignore`
-- **Use environment variables** - Don't hardcode credentials
-- **Limit permissions** - Only grant the permissions your workflows need
-- **Limit repository access** - Install the app only on repos that need it
+- 🔐 **Never commit the secret sauce** — Add `*.pem` to `.gitignore`
+- 🧂 **Keep ingredients in the pantry** — Use environment variables
+- 👨‍🍳 **One chef, one station** — Limit permissions to what's needed
+- 🍽️ **Invite-only kitchen** — Install the app only on repos that need it
 
 ## License
 
 MIT
+
+---
+
+*Part of [BBQ Party](../../README.md) — Your AI Sous Chef for Code*

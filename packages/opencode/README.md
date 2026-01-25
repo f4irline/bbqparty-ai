@@ -1,75 +1,67 @@
-# BBQ Party - OpenCode Workflow Package
+# 📦 BBQ Party — The Recipe Book
 
-This directory contains the OpenCode configuration for the BBQ Party workflow automation system. Copy these files to your project to enable Linear-to-GitHub workflow automation.
+This is the portable OpenCode configuration for BBQ Party. Drop it into any project to get your AI sous chef cooking.
 
 ## Installation
 
-1. **Copy to your project root:**
-   ```bash
-   cp -r .opencode /path/to/your/project/
-   cp opencode.json /path/to/your/project/
-   ```
+**Option A: Use the init script (recommended)**
+```bash
+# From bbqparty root
+./init.sh /path/to/your/project --pem /path/to/key.pem
+```
 
-2. **Set up environment variables** (add to `~/.zshenv` or similar):
-   ```bash
-   # Linear API key (recommend using a service account)
-   export BBQ_LINEAR_API_KEY="lin_api_xxxxx"
-   
-   # GitHub App credentials
-   export BBQ_GITHUB_APP_ID="123456"
-   export BBQ_GITHUB_APP_INSTALLATION_ID="12345678"
-   export BBQ_GITHUB_APP_PRIVATE_KEY="<base64-encoded-key>"
-   ```
+**Option B: Manual copy**
+```bash
+cp -r .opencode /path/to/your/project/
+cp opencode.json /path/to/your/project/
+```
 
-3. **Build the GitHub App MCP Docker image** (one-time setup):
-   ```bash
-   cd /path/to/bbqparty/mcp/github-app
-   docker build -t bbqparty/github-app-mcp .
-   ```
+## The Menu
 
-## What's Included
+| Command | What It Does |
+|---------|--------------|
+| `/bbq.ticket <ticket>` | 📋 Check the ticket |
+| `/bbq.pantry <ticket>` | 🔍 Check the pantry, document findings |
+| `/bbq.prep <ticket>` | 🔪 Mise en place (technical planning) |
+| `/bbq.fire <ticket>` | 🔥 Fire the grill (code, test, PR) |
+| `/bbq.taste <ticket>` | 👨‍🍳 Address the critics (review comments) |
 
-### Commands
+## Kitchen Techniques (Skills)
 
-| Command | Description |
-|---------|-------------|
-| `/bbq.research <ticket>` | Research a ticket, document findings, move to "Ready to Plan" |
-| `/bbq.plan <ticket>` | Create technical plan, move to "Ready" |
-| `/bbq.implement <ticket>` | Full implementation: branch, code, tests, PR |
-| `/bbq.review <ticket>` | Address PR review comments |
-| `/bbq.status <ticket>` | Show ticket status across Linear, Git, GitHub |
-
-### Skills
-
-| Skill | Description |
-|-------|-------------|
+| Skill | What It Does |
+|-------|--------------|
 | `git-branch-create` | Create branch: `{type}/{ticket}-{description}` |
 | `git-push-remote` | Push with upstream tracking |
 | `git-commit` | Conventional commits with ticket refs |
 | `git-find-ticket-branch` | Find branch by ticket ID |
 | `progress-doc` | Track progress in `docs/progress/` |
 
-### Plugins
+## The Health Inspector (Plugins)
 
-- **validate-changes** - Auto-runs lint/build/test after commits based on changed paths
+- **validate-changes** — Auto-runs lint/build/test after commits
 
-## Linear Workflow
-
-The commands expect these Linear statuses:
+## Order Flow (Linear Statuses)
 
 ```
 Backlog → In Research → Ready to Plan → Planning → Ready → In Progress → In Review → Done
+           🔍              📋            🔪         ✅        🔥            👨‍🍳        🍽️
 ```
 
-## Customization
+## Customizing the Menu
 
-- Edit `.opencode/commands/*.md` to customize command behavior
-- Edit `.opencode/skills/*/SKILL.md` to modify skill instructions
-- Edit `opencode.json` to change MCP configuration
+| What to Change | Where |
+|----------------|-------|
+| Command behavior | `.opencode/commands/*.md` |
+| Kitchen techniques | `.opencode/skills/*/SKILL.md` |
+| MCP connections | `opencode.json` |
 
-## Requirements
+## Ingredients Required
 
-- [OpenCode](https://opencode.ai) CLI
-- Docker (for GitHub App MCP)
-- Linear workspace with appropriate statuses
-- GitHub App installed on your repository
+- [OpenCode](https://opencode.ai) — Your sous chef
+- Docker — For the grill (GitHub App MCP)
+- Linear — Order management
+- GitHub App — Bot identity
+
+---
+
+*Part of [BBQ Party](../../README.md) — Your AI Sous Chef for Code*

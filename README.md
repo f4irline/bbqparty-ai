@@ -1,174 +1,218 @@
-# BBQ Party - AI Workflow Automation
+```
+                                    ╭───────────────────────────────────╮
+                                    │      ~~~  ~~~  ~~~  ~~~  ~~~      │
+                                    │    ~~~  SMOKE SIGNALS  ~~~        │
+                                    │      ~~~  ~~~  ~~~  ~~~  ~~~      │
+                                    ╰───────────────────────────────────╯
+                                                    ║║║║
+                                                   ╔════╗
+                ╔═══════════════════════════════════════════════════════════════════╗
+                ║  ┌─────┐  ┌─────┐  ┌─────┐  ┌─────┐  ┌─────┐  ┌─────┐  ┌─────┐    ║
+                ║  │ 🍖  │  │ 🌽  │  │ 🍗  │  │ 🥩  │  │ 🌶️  │  │ 🧅  │  │ 🍖  │    ║
+                ║  └─────┘  └─────┘  └─────┘  └─────┘  └─────┘  └─────┘  └─────┘    ║
+                ║═══════════════════════════════════════════════════════════════════║
+                ║  ════════════════════════════════════════════════════════════════ ║
+                ║  ════════════════════════════════════════════════════════════════ ║
+                ║═══════════════════════════════════════════════════════════════════║
+                ║   🔥  🔥  🔥  🔥  🔥  🔥  🔥  🔥  🔥  🔥  🔥  🔥  🔥  🔥  🔥  🔥   ║
+                ╚═══════════════════════════════════════════════════════════════════╝
+                    ╱╲      ╱╲      ╱╲      ╱╲      ╱╲      ╱╲      ╱╲      ╱╲
 
-OpenCode-powered workflow automation for Linear tickets and GitHub PRs.
+  ██████╗  ██████╗  ██████╗     ██████╗  █████╗ ██████╗ ████████╗██╗   ██╗
+  ██╔══██╗██╔══██╗██╔═══██╗    ██╔══██╗██╔══██╗██╔══██╗╚══██╔══╝╚██╗ ██╔╝
+  ██████╔╝██████╔╝██║   ██║    ██████╔╝███████║██████╔╝   ██║    ╚████╔╝
+  ██╔══██╗██╔══██╗██║▄▄ ██║    ██╔═══╝ ██╔══██║██╔══██╗   ██║     ╚██╔╝
+  ██████╔╝██████╔╝╚██████╔╝    ██║     ██║  ██║██║  ██║   ██║      ██║
+  ╚═════╝ ╚═════╝  ╚══▀▀═╝     ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝      ╚═╝
 
-## Overview
+                         🍖  YOUR AI SOUS CHEF FOR CODE  🍖
+```
 
-This project uses [OpenCode](https://opencode.ai) to automate the software development lifecycle from ticket research to PR review. It integrates with:
+<div align="center">
 
-- **Linear** - Issue tracking and status management
-- **GitHub** - Pull requests and code review (via GitHub App for bot identity)
+**You're the Head Chef. [OpenCode](https://opencode.ai) is your Sous Chef.**<br>
+**Tickets are orders. Ship code like you're running a kitchen.**
 
-## Project Structure
+</div>
+
+---
+
+## What's Cooking?
+
+BBQ Party is a workflow automation toolkit that turns your Linear tickets into a well-oiled kitchen operation. Your AI sous chef handles the prep work, fires up the grill, and plates the code — you just call the shots.
+
+| Kitchen Term | What It Really Means |
+|--------------|---------------------|
+| 📋 **Order** | Linear ticket |
+| 🔪 **Prep Work** | Research & planning |
+| 🔥 **Fire the Grill** | Implementation |
+| 🍽️ **Plating** | PR ready for review |
+| 👨‍🍳 **Taste Test** | Code review |
+| ✅ **Served** | Merged to main |
+
+## The Menu (Commands)
+
+```
+/bbq.status STU-15      Check the ticket
+/bbq.pantry STU-15      What's in the pantry? (research)
+/bbq.prep STU-15        Mise en place (planning)
+/bbq.fire STU-15        Fire! (code, test, PR)
+/bbq.taste STU-15       Address the critics
+```
+
+## Kitchen Layout
 
 ```
 bbqparty/
-├── packages/
-│   └── opencode/              # ← Copy this to your project
-│       ├── .opencode/         # Commands, skills, plugins
-│       ├── opencode.json      # MCP configuration
-│       └── README.md          # Usage instructions
-├── mcp/
-│   └── github-app/            # GitHub App MCP server (Docker)
-│       ├── src/
-│       ├── Dockerfile
-│       ├── scripts/
-│       │   └── setup-github-key.sh
-│       └── README.md
-└── docs/
-    └── ...
+├── 📦 packages/opencode/     # The recipe book — copy to your project
+├── 🔥 mcp/github-app/        # The grill — GitHub bot that does the cooking
+├── 📚 docs/                  # Kitchen manual
+└── 🚀 init.sh                # Open the kitchen
 ```
 
-## Quick Start
+---
 
-### Option A: Use the Init Script (Recommended)
+## Opening the Kitchen
+
+### Quick Start (Recommended)
 
 ```bash
-# Initialize a project with full setup
+# Fire up a new kitchen
 ./init.sh /path/to/your/project --pem /path/to/github-app-key.pem
-
-# Or initialize current directory
-./init.sh . --pem ~/keys/my-app.pem
-
-# Skip Docker rebuild if image already exists
-./init.sh /path/to/project --pem ~/keys/my-app.pem --skip-docker
 ```
 
-The init script will:
-1. Build the Docker image (if needed)
-2. Configure your GitHub App private key
-3. Copy the OpenCode configuration to your project
+This will:
+1. 🔥 Fire up the grill (build Docker image)
+2. 🧂 Stock the pantry (configure credentials)  
+3. 📋 Hang the menu (copy OpenCode config)
 
-### Option B: Manual Setup
+### Manual Setup
 
-#### 1. Build the GitHub App MCP Server
+<details>
+<summary>Click to expand manual instructions</summary>
+
+#### 1. Fire Up the Grill
 
 ```bash
 cd mcp/github-app
 docker build -t bbqparty/github-app-mcp .
 ```
 
-#### 2. Set Up GitHub App
+#### 2. Get Your Ingredients (GitHub App)
 
-See [mcp/github-app/README.md](mcp/github-app/README.md) for detailed instructions:
+See [mcp/github-app/README.md](mcp/github-app/README.md) for the full recipe:
 
-1. Create a GitHub App with required permissions
-2. Install it on your repository
-3. Generate a private key
-4. Run the setup script to configure your environment:
+1. Create a GitHub App (your kitchen's identity)
+2. Install it on your repo
+3. Download the secret ingredient (private key)
+4. Run the prep script:
 
 ```bash
-cd mcp/github-app
 ./scripts/setup-github-key.sh /path/to/private-key.pem
 ```
 
-#### 3. Set Environment Variables
+#### 3. Stock the Pantry (Environment Variables)
 
 Add to `~/.zshenv`:
 
 ```bash
-# Linear API key (recommend using a service account for bot identity)
 export BBQ_LINEAR_API_KEY="lin_api_xxxxx"
-
-# GitHub App (set by setup-github-key.sh, or manually)
 export BBQ_GITHUB_APP_ID="123456"
 export BBQ_GITHUB_APP_INSTALLATION_ID="12345678"
 export BBQ_GITHUB_APP_PRIVATE_KEY="<base64-encoded-key>"
 ```
 
-#### 4. Copy to Your Project
+#### 4. Copy the Recipe Book
 
 ```bash
-# From your target project root:
 cp -r /path/to/bbqparty/packages/opencode/.opencode .
 cp /path/to/bbqparty/packages/opencode/opencode.json .
 ```
 
-#### 5. Run OpenCode
+#### 5. Open for Business
 
 ```bash
 opencode
 ```
 
-## Commands
+</details>
 
-| Command | Description |
-|---------|-------------|
-| `/bbq.research <ticket>` | Research a ticket, document findings, move to "Ready to Plan" |
-| `/bbq.plan <ticket>` | Create technical implementation plan, move to "Ready" |
-| `/bbq.implement <ticket>` | Full implementation workflow: branch, code, test, PR |
-| `/bbq.review <ticket>` | Address PR review comments with commit per comment |
-| `/bbq.status <ticket>` | Show ticket status across Linear, Git, and GitHub |
+---
 
-## Workflow
+## The Ticket Window
+
+Orders flow through the kitchen like this:
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  /bbq.      │     │  /bbq.      │     │  /bbq.      │     │  /bbq.      │
-│  research   │ ──▶ │  plan       │ ──▶ │  implement  │ ──▶ │  review     │
-└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
-      │                   │                   │                   │
-      ▼                   ▼                   ▼                   ▼
-  In Research        Planning            In Progress          In Review
-      │                   │                   │                   │
-      ▼                   ▼                   ▼                   ▼
- Ready to Plan          Ready            Creates PR           Merged
+    📋 ORDER IN!
+         │
+         ▼
+┌─────────────────┐
+│  /bbq.pantry    │ ──▶ Check the pantry, document what we need
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│  /bbq.prep      │ ──▶ Mise en place — prep the ingredients
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│  /bbq.fire      │ ──▶ 🔥 FIRE! Cook it up, plate it (PR)
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│  /bbq.taste     │ ──▶ Critics sent it back? Re-season and re-fire
+└────────┬────────┘
+         ▼
+    ✅ ORDER UP!
 ```
 
-## Linear Workflow Setup
-
-The commands expect these statuses in your Linear workflow:
-
+**Linear statuses move automatically:**
 ```
 Backlog → In Research → Ready to Plan → Planning → Ready → In Progress → In Review → Done
+                                                                                      🍽️
 ```
 
-See [packages/opencode/README.md](packages/opencode/README.md) for customization options.
+---
 
-## Components
+## What's in the Box?
 
-### OpenCode Package (`packages/opencode/`)
+### 📦 The Recipe Book (`packages/opencode/`)
 
-The portable workflow configuration. Copy to any project to enable BBQ Party automation.
+Drop this into any project. It's got everything your sous chef needs:
 
-**Includes:**
-- Commands (`/bbq.research`, `/bbq.plan`, etc.)
-- Skills (git-branch-create, git-commit, etc.)
-- Plugins (validate-changes)
-- MCP configuration
+- **Commands** — The menu items (`/bbq.pantry`, `/bbq.prep`, `/bbq.fire`, etc.)
+- **Skills** — Kitchen techniques (branching, commits, progress tracking)
+- **Plugins** — Auto-validation after commits (the health inspector)
+- **MCP Config** — Connection to Linear and GitHub
 
-### GitHub App MCP Server (`mcp/github-app/`)
+### 🔥 The Grill (`mcp/github-app/`)
 
-A Docker-based MCP server that authenticates as a GitHub App, so actions appear as a bot.
+A Docker-based GitHub MCP server. Actions appear as your bot, not your personal account. No more "why is the chef's name on every dish?"
 
-**Features:**
-- Pull request management
-- Issue management
-- Repository access
-- Bot identity (not your personal account)
+---
 
-## Documentation
+## Kitchen Rules (Security)
 
-- [OpenCode Package README](packages/opencode/README.md) - Usage and customization
-- [GitHub App MCP README](mcp/github-app/README.md) - Server setup and configuration
+- 🔐 **Never commit the secret sauce** — `*.pem` stays out of git
+- 🧂 **Keep ingredients in the pantry** — Use environment variables
+- 👨‍🍳 **One chef, one station** — Limit GitHub App permissions
+- 🍽️ **Service accounts for Linear** — So the bot gets credit, not you
 
-## Security Notes
+---
 
-- **Never commit private keys** - `*.pem` is in `.gitignore`
-- **Use environment variables** - Don't hardcode API keys
-- **Limit permissions** - Only grant what's needed
-- **Use service accounts** - For clear bot attribution in Linear
+## Further Reading
+
+- [📦 OpenCode Package README](packages/opencode/README.md) — How to customize the menu
+- [🔥 GitHub App MCP README](mcp/github-app/README.md) — Grill setup and maintenance
+
+---
 
 ## License
 
-MIT
+MIT — *Free as in beer, free as in BBQ.*
+
+---
+
+<p align="center">
+  <i>Now stop reading and start cooking.</i> 🍖
+</p>
