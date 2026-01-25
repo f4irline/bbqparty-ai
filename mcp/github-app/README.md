@@ -61,16 +61,40 @@ A Model Context Protocol (MCP) server that authenticates as a GitHub App, allowi
 export GITHUB_APP_ID="123456"
 export GITHUB_APP_INSTALLATION_ID="12345678"
 
-# Option A: Path to private key file
+# Option A: Path to private key file (for local development)
 export GITHUB_APP_PRIVATE_KEY_PATH="/path/to/your-app.private-key.pem"
 
-# Option B: Private key content directly (useful for CI/CD)
+# Option B: Base64 encoded key (recommended for Docker/CI/CD)
+export GITHUB_APP_PRIVATE_KEY="$(base64 < /path/to/your-app.private-key.pem | tr -d '\n')"
+
+# Option C: Raw key content (works but may have JSON escaping issues)
 export GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----
 ...
 -----END RSA PRIVATE KEY-----"
 ```
 
+**Tip:** Use the included setup script to add the base64-encoded key to your shell:
+```bash
+./scripts/setup-github-key.sh /path/to/your-app.private-key.pem
+```
+
 ### 4. Build and Run
+
+#### Option A: Docker (Recommended)
+
+Build the image once and use it anywhere:
+
+```bash
+cd mcp/github-app
+docker build -t bbqparty/github-app-mcp .
+```
+
+Or pull from a registry if published:
+```bash
+docker pull ghcr.io/your-org/github-app-mcp:latest
+```
+
+#### Option B: Local (Development)
 
 ```bash
 cd mcp/github-app
@@ -86,7 +110,38 @@ pnpm dev
 
 ## Configuration in OpenCode
 
-Add to your `opencode.json`:
+### Docker Configuration (Recommended)
+
+Add to your project's `opencode.json`:
+
+```json
+{
+  "mcp": {
+    "github": {
+      "type": "local",
+      "command": [
+        "docker", "run", "--rm", "-i",
+        "-e", "GITHUB_APP_ID",
+        "-e", "GITHUB_APP_INSTALLATION_ID",
+        "-e", "GITHUB_APP_PRIVATE_KEY",
+        "bbqparty/github-app-mcp"
+      ],
+      "environment": {
+        "GITHUB_APP_ID": "{env:BBQ_GITHUB_APP_ID}",
+        "GITHUB_APP_INSTALLATION_ID": "{env:BBQ_GITHUB_APP_INSTALLATION_ID}",
+        "GITHUB_APP_PRIVATE_KEY": "{env:BBQ_GITHUB_APP_PRIVATE_KEY}"
+      },
+      "enabled": true
+    }
+  }
+}
+```
+
+Note: With Docker, pass the private key content directly via `GITHUB_APP_PRIVATE_KEY` environment variable (not a file path).
+
+### Local Configuration
+
+If running locally without Docker:
 
 ```json
 {

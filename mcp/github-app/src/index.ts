@@ -30,7 +30,13 @@ if (!GITHUB_APP_INSTALLATION_ID) {
 // Get private key from file or environment
 let privateKey: string;
 if (GITHUB_APP_PRIVATE_KEY) {
-  privateKey = GITHUB_APP_PRIVATE_KEY;
+  // Check if the key is base64 encoded (no PEM header means it's encoded)
+  if (GITHUB_APP_PRIVATE_KEY.startsWith("-----BEGIN")) {
+    privateKey = GITHUB_APP_PRIVATE_KEY;
+  } else {
+    // Decode base64
+    privateKey = Buffer.from(GITHUB_APP_PRIVATE_KEY, "base64").toString("utf-8");
+  }
 } else if (GITHUB_APP_PRIVATE_KEY_PATH) {
   try {
     privateKey = fs.readFileSync(GITHUB_APP_PRIVATE_KEY_PATH, "utf-8");
