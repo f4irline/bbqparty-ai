@@ -2,7 +2,11 @@
 description: Create a technical implementation plan for a Linear ticket
 ---
 
-You are planning the technical implementation for Linear ticket $ARGUMENTS.
+Parse the input: `$ARGUMENTS`
+- The first word is the **ticket ID** (e.g., `STU-15`)
+- Everything after is **additional context** from the user (optional, e.g., constraints, preferences, scope notes)
+
+You are planning the technical implementation for the ticket. If additional context was provided, factor it into your planning.
 
 Follow these steps:
 

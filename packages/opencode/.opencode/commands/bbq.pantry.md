@@ -2,7 +2,11 @@
 description: Research a Linear ticket and document findings
 ---
 
-You are researching Linear ticket $ARGUMENTS.
+Parse the input: `$ARGUMENTS`
+- The first word is the **ticket ID** (e.g., `STU-15`)
+- Everything after is **additional context** from the user (optional, e.g., areas to focus on, specific concerns)
+
+You are researching the ticket. If additional context was provided, incorporate it into your research focus.
 
 Follow these steps:
 

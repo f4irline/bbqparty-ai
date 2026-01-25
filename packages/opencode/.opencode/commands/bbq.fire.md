@@ -2,7 +2,11 @@
 description: Implement a Linear ticket following the full workflow
 ---
 
-You are implementing Linear ticket $ARGUMENTS.
+Parse the input: `$ARGUMENTS`
+- The first word is the **ticket ID** (e.g., `STU-15`)
+- Everything after is **additional context** from the user (optional, e.g., "this needs extensive research", "focus on performance", "skip tests for now")
+
+You are implementing the ticket. If additional context was provided, adjust your approach accordingly.
 
 Follow these steps:
 

@@ -2,7 +2,11 @@
 description: Show current status of a Linear ticket across Linear and GitHub
 ---
 
-Show the current status of Linear ticket $ARGUMENTS across all systems.
+Parse the input: `$ARGUMENTS`
+- The first word is the **ticket ID** (e.g., `STU-15`)
+- Everything after is **additional context** from the user (optional)
+
+Show the current status of the ticket across all systems. If additional context was provided, keep it in mind.
 
 Gather and display:
 

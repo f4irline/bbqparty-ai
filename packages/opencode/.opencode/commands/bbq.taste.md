@@ -2,7 +2,11 @@
 description: Address PR review comments for a Linear ticket
 ---
 
-You are addressing review comments for Linear ticket $ARGUMENTS.
+Parse the input: `$ARGUMENTS`
+- The first word is the **ticket ID** (e.g., `STU-15`)
+- Everything after is **additional context** from the user (optional, e.g., specific comments to focus on)
+
+You are addressing review comments for the ticket. If additional context was provided, prioritize accordingly.
 
 Follow these steps:
 
