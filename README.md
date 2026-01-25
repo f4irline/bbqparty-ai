@@ -31,14 +31,34 @@ bbqparty/
 
 ## Quick Start
 
-### 1. Build the GitHub App MCP Server
+### Option A: Use the Init Script (Recommended)
+
+```bash
+# Initialize a project with full setup
+./init.sh /path/to/your/project --pem /path/to/github-app-key.pem
+
+# Or initialize current directory
+./init.sh . --pem ~/keys/my-app.pem
+
+# Skip Docker rebuild if image already exists
+./init.sh /path/to/project --pem ~/keys/my-app.pem --skip-docker
+```
+
+The init script will:
+1. Build the Docker image (if needed)
+2. Configure your GitHub App private key
+3. Copy the OpenCode configuration to your project
+
+### Option B: Manual Setup
+
+#### 1. Build the GitHub App MCP Server
 
 ```bash
 cd mcp/github-app
 docker build -t bbqparty/github-app-mcp .
 ```
 
-### 2. Set Up GitHub App
+#### 2. Set Up GitHub App
 
 See [mcp/github-app/README.md](mcp/github-app/README.md) for detailed instructions:
 
@@ -52,7 +72,7 @@ cd mcp/github-app
 ./scripts/setup-github-key.sh /path/to/private-key.pem
 ```
 
-### 3. Set Environment Variables
+#### 3. Set Environment Variables
 
 Add to `~/.zshenv`:
 
@@ -66,7 +86,7 @@ export BBQ_GITHUB_APP_INSTALLATION_ID="12345678"
 export BBQ_GITHUB_APP_PRIVATE_KEY="<base64-encoded-key>"
 ```
 
-### 4. Copy to Your Project
+#### 4. Copy to Your Project
 
 ```bash
 # From your target project root:
@@ -74,7 +94,7 @@ cp -r /path/to/bbqparty/packages/opencode/.opencode .
 cp /path/to/bbqparty/packages/opencode/opencode.json .
 ```
 
-### 5. Run OpenCode
+#### 5. Run OpenCode
 
 ```bash
 opencode
