@@ -10,11 +10,10 @@ BBQ Party is a workflow automation toolkit that integrates Linear tickets with G
 
 ```
 bbqparty/
-├── packages/opencode/       # OpenCode configuration (commands, skills, plugins)
+├── packages/opencode/       # OpenCode configuration (commands, skills)
 │   └── .opencode/
 │       ├── commands/        # Slash commands (/bbq.*)
 │       ├── skills/          # Reusable procedures (git-*, learnings)
-│       ├── plugins/         # Event hooks (validate-changes)
 │       └── templates/       # Document templates
 ├── mcp/github-app/          # GitHub App MCP server (TypeScript)
 │   ├── src/index.ts         # Main MCP server implementation
@@ -50,19 +49,12 @@ docker build -t bbqparty/github-app-mcp .
 bun install
 ```
 
-### Running Tests
-
-This project does not have a test suite. When implementing features in projects that use BBQ Party, the `validate-changes` plugin automatically runs lint/build/test after git commits based on changed directories:
-
-- `mobile/` changes: `npm run lint && npm run build && npm test`
-- `api/` changes: `npm run lint && npm run build && npm test`
-- `infra/` changes: `terraform validate && terraform plan`
-
 ## Code Style Guidelines
 
 ### TypeScript Configuration
 
 From `mcp/github-app/tsconfig.json`:
+
 - Target: ES2022
 - Module: NodeNext
 - Strict mode enabled
@@ -136,10 +128,12 @@ main().catch((error) => {
 ### Git Conventions
 
 **Branch naming**: `{type}/{ticket-id}-short-description`
+
 - Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`
 - Example: `feat/STU-15-user-authentication`
 
 **Commit messages**: Conventional Commits with ticket reference
+
 ```
 {type}({scope}): {description}
 
@@ -149,6 +143,7 @@ Refs: {ticket-id}
 ```
 
 Example:
+
 ```
 feat(api): add user authentication endpoint
 
@@ -192,6 +187,7 @@ Refs: STU-15
 ### Learnings System
 
 Store insights in `docs/learnings/`:
+
 - `gotchas.md`: Traps and pitfalls
 - `patterns.md`: How things are done here
 - `decisions.md`: Architectural choices with rationale
@@ -200,6 +196,7 @@ Store insights in `docs/learnings/`:
 ## Environment Variables
 
 Required for GitHub App MCP:
+
 ```bash
 BBQ_LINEAR_API_KEY        # Linear API key
 BBQ_GITHUB_APP_ID         # GitHub App ID
