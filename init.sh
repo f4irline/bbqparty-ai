@@ -170,12 +170,13 @@ if [ -d "$TARGET_PATH/.opencode" ]; then
 	if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 		echo "  Keeping old menu"
 	else
-		rm -rf "$TARGET_PATH/.opencode"
-		cp -r "$OPENCODE_SOURCE/.opencode" "$TARGET_PATH/"
+		mkdir -p "$TARGET_PATH/.opencode"
+		cp -R "$OPENCODE_SOURCE/.opencode/." "$TARGET_PATH/.opencode/"
 		echo -e "  ${GREEN}✓ New menu hung${NC}"
 	fi
 else
-	cp -r "$OPENCODE_SOURCE/.opencode" "$TARGET_PATH/"
+	mkdir -p "$TARGET_PATH/.opencode"
+	cp -R "$OPENCODE_SOURCE/.opencode/." "$TARGET_PATH/.opencode/"
 	echo -e "  ${GREEN}✓ Menu hung${NC}"
 fi
 
