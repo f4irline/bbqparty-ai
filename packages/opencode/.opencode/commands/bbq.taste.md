@@ -18,6 +18,7 @@ Follow these steps:
    a. Understand the feedback
    b. Make the necessary changes
    c. Create a focused commit addressing that specific comment using the git-commit skill
+   d. Resolve that comment in GitHub using GitHub MCP once the change is in place
 6. Use the git-push-remote skill to push all commits
 7. Add a summary comment to the PR using GitHub MCP explaining:
    - What changes were made
