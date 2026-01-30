@@ -49,4 +49,8 @@ Follow these steps:
     
     If nothing noteworthy was learned, say so briefly and move on.
 
+## Trigger Code Review
+
+11. Add a comment with exactly "@coderabbitai review" to the pull request using GitHub MCP to trigger automatic code review.
+
 Be thorough in addressing feedback and clear in your responses.

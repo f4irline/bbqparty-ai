@@ -61,3 +61,7 @@ Ensure all tests pass before creating the PR.
     ```
     
     If nothing noteworthy was learned, say so briefly and move on.
+
+## Trigger Code Review
+
+16. Add a comment with exactly "@coderabbitai review" to the pull request using GitHub MCP to trigger automatic code review.
