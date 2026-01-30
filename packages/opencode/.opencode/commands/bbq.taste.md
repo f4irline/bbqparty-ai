@@ -25,4 +25,28 @@ Follow these steps:
    - How each comment was addressed
    - Any items that need further discussion
 
+## Write Down What You Learned
+
+8. **Extract learnings** from addressing these review comments — but only if something technically relevant was learned:
+   - A surprising API behavior or gotcha worth remembering
+   - A workaround for a bug or limitation
+   - A pattern that should be followed in the future
+   - An architectural decision with non-obvious rationale
+   
+   Skip this step if the changes were straightforward and nothing noteworthy emerged.
+   
+9. For each learning worth documenting:
+   - Categorize it (gotcha, pattern, decision, or discovery)
+   - Create `docs/learnings/` directory if it doesn't exist
+   - Append the learning to the appropriate file with ticket ID and date using the `learnings` skill
+   
+10. Summarize what was documented:
+    ```
+    Documented X learnings:
+    - gotchas.md: "Title"
+    - patterns.md: "Title"
+    ```
+    
+    If nothing noteworthy was learned, say so briefly and move on.
+
 Be thorough in addressing feedback and clear in your responses.

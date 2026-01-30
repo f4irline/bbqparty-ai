@@ -40,16 +40,18 @@ Ensure all tests pass before creating the PR.
 
 ## Write Down What You Learned
 
-13. **Extract learnings** from this implementation session using the `learnings` skill:
-    - What was surprising or unexpected?
-    - What workarounds were needed?
-    - What patterns were followed or established?
-    - What decisions were made and why?
+13. **Extract learnings** from this implementation session — but only if something technically relevant was learned:
+    - A surprising API behavior or gotcha worth remembering
+    - A workaround for a bug or limitation
+    - A pattern that should be followed in the future
+    - An architectural decision with non-obvious rationale
     
-14. For each learning:
+    Skip this step if the work was routine and nothing noteworthy emerged.
+    
+14. For each learning worth documenting:
     - Categorize it (gotcha, pattern, decision, or discovery)
     - Create `docs/learnings/` directory if it doesn't exist
-    - Append the learning to the appropriate file with ticket ID and date
+    - Append the learning to the appropriate file with ticket ID and date using the `learnings` skill
     
 15. Summarize what was documented:
     ```
@@ -58,4 +60,4 @@ Ensure all tests pass before creating the PR.
     - patterns.md: "Title"
     ```
     
-    If nothing noteworthy was learned, that's fine — say so.
+    If nothing noteworthy was learned, say so briefly and move on.
