@@ -1,24 +1,22 @@
-# AGENTS.md - BBQ Party
+# AGENTS.md — BBQ Party
 
-This file provides guidance for AI coding agents working in the BBQ Party repository.
+Guidance for AI coding agents working in this repository.
 
 ## Project Overview
 
-BBQ Party is a workflow automation toolkit that integrates Linear tickets with GitHub via OpenCode. It uses a "kitchen" metaphor where tickets are "orders" and the AI is your "sous chef."
+BBQ Party is a workflow automation toolkit integrating Linear tickets with GitHub via OpenCode.
 
-### Repository Structure
+## Repository Structure
 
 ```
 bbqparty/
-├── packages/opencode/       # OpenCode configuration (commands, skills)
-│   └── .opencode/
-│       ├── commands/        # Slash commands (/bbq.*)
-│       ├── skills/          # Reusable procedures (git-*, learnings)
-│       └── templates/       # Document templates
-├── mcp/github-app/          # GitHub App MCP server (TypeScript)
-│   ├── src/index.ts         # Main MCP server implementation
-│   └── dist/                # Compiled output
-└── docs/                    # Documentation
+├── packages/opencode/           # OpenCode config (copy to target projects)
+│   ├── .opencode/commands/      # Slash commands (/bbq.*)
+│   ├── .opencode/skills/        # Reusable procedures (git-*, learnings)
+│   └── opencode.json            # MCP server configuration
+├── mcp/github-app/              # GitHub App MCP server (TypeScript)
+│   └── src/index.ts             # Main server implementation
+└── docs/                        # Documentation
 ```
 
 ## Build/Lint/Test Commands
@@ -26,113 +24,91 @@ bbqparty/
 ### GitHub App MCP Server (`mcp/github-app/`)
 
 ```bash
-# Install dependencies
-pnpm install
+pnpm install              # Install dependencies
+pnpm build                # Build TypeScript (tsc)
+pnpm dev                  # Development with hot reload (tsx)
+pnpm start                # Run production (node dist/index.js)
 
-# Build TypeScript
-pnpm build          # or: tsc
-
-# Run development mode
-pnpm dev            # uses tsx for hot reload
-
-# Run production
-pnpm start          # runs dist/index.js
-
-# Build Docker image
+# Docker
 docker build -t bbqparty/github-app-mcp .
+docker run --rm -i -e GITHUB_APP_ID -e GITHUB_APP_INSTALLATION_ID -e GITHUB_APP_PRIVATE_KEY bbqparty/github-app-mcp
 ```
 
 ### OpenCode Plugin (`packages/opencode/.opencode/`)
 
 ```bash
-# Install dependencies (from .opencode directory)
-bun install
+bun install               # Install dependencies
 ```
+
+### Tests
+
+No test framework currently configured. If adding tests, use Vitest or Jest.
+Single test: `pnpm test -- path/to/file.test.ts`
 
 ## Code Style Guidelines
 
-### TypeScript Configuration
+### TypeScript
 
-From `mcp/github-app/tsconfig.json`:
-
-- Target: ES2022
-- Module: NodeNext
-- Strict mode enabled
-- Declaration files generated
-
-### Imports
+- Target: ES2022 | Module: NodeNext | Strict mode enabled
+- Use `.js` extension for MCP SDK imports
 
 ```typescript
-// Use ESM imports with .js extension for local files
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-
-// Named imports preferred
 import { Octokit } from "@octokit/rest";
-import { createAppAuth } from "@octokit/auth-app";
-
-// Node.js built-ins
 import * as fs from "fs";
 ```
 
 ### Type Annotations
 
 ```typescript
-// Explicit types for function parameters
-let privateKey: string;
-
-// Use 'as const' for literal types in objects
-type: "object" as const,
-
-// Type assertions with 'as any' for dynamic MCP tool arguments
-const { owner, repo, title } = args as any;
+let privateKey: string;                    // Explicit types for delayed init
+type: "object" as const,                   // Literal types in schemas
+const { owner, repo } = args as any;       // Dynamic MCP tool arguments
 ```
 
-### Error Handling
+### Formatting
 
-```typescript
-// Exit immediately on missing required config
-if (!GITHUB_APP_ID) {
-  console.error("Error: GITHUB_APP_ID environment variable is required");
-  process.exit(1);
-}
-
-// Try-catch with error messages for tool operations
-try {
-  const response = await octokit.pulls.create({ ... });
-  return { content: [...] };
-} catch (error: any) {
-  return {
-    content: [{ type: "text", text: `Error: ${error.message}` }],
-    isError: true,
-  };
-}
-
-// Async main with catch block
-main().catch((error) => {
-  console.error("Fatal error:", error);
-  process.exit(1);
-});
-```
+- 2 spaces indentation | Double quotes | Semicolons required
+- Trailing commas in multi-line objects/arrays
 
 ### Naming Conventions
 
 | Type | Convention | Example |
 |------|------------|---------|
 | Files | kebab-case | `validate-changes.ts` |
-| Variables/Functions | camelCase | `privateKey`, `createPullRequest` |
-| Types/Interfaces | PascalCase | `Plugin`, `Server` |
-| Constants | UPPER_SNAKE | `GITHUB_APP_ID` |
+| Variables/Functions | camelCase | `privateKey` |
+| Types/Interfaces | PascalCase | `Server` |
+| Constants | UPPER_SNAKE_CASE | `GITHUB_APP_ID` |
 | MCP tool names | snake_case | `create_pull_request` |
 
-### Git Conventions
+### Error Handling
 
-**Branch naming**: `{type}/{ticket-id}-short-description`
+```typescript
+// Fail fast on missing config
+if (!GITHUB_APP_ID) {
+  console.error("Error: GITHUB_APP_ID environment variable is required");
+  process.exit(1);
+}
 
-- Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`
-- Example: `feat/STU-15-user-authentication`
+// Wrap async operations
+try {
+  const response = await octokit.pulls.create({ ... });
+} catch (error: any) {
+  return { content: [{ type: "text", text: `Error: ${error.message}` }], isError: true };
+}
+```
 
-**Commit messages**: Conventional Commits with ticket reference
+## Git Conventions
+
+### Branch Naming
+
+Format: `{type}/{ticket-id}-short-description`
+
+Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`
+
+Example: `feat/STU-15-user-authentication`
+
+### Commit Messages
 
 ```
 {type}({scope}): {description}
@@ -142,71 +118,41 @@ main().catch((error) => {
 Refs: {ticket-id}
 ```
 
-Example:
+## Environment Variables
 
-```
-feat(api): add user authentication endpoint
+| Variable | Description |
+|----------|-------------|
+| `BBQ_LINEAR_API_KEY` | Linear API key |
+| `BBQ_GITHUB_APP_ID` | GitHub App ID |
+| `BBQ_GITHUB_APP_INSTALLATION_ID` | Installation ID |
+| `BBQ_GITHUB_APP_PRIVATE_KEY` | Base64-encoded private key |
 
-Implement JWT-based authentication with refresh tokens.
-Includes rate limiting and brute force protection.
+## Security Rules
 
-Refs: STU-15
-```
+- Never commit `.pem` files, `.env`, or `credentials.json`
+- Use environment variables for all secrets
 
-### Formatting
-
-- 2-space indentation
-- Double quotes for strings
-- Semicolons required
-- Max line length: ~100 characters (soft limit)
-- Trailing commas in multi-line objects/arrays
-
-## OpenCode Skills & Commands
-
-### Available Commands
+## OpenCode Commands
 
 | Command | Purpose |
 |---------|---------|
 | `/bbq.ticket <id>` | Check ticket status |
-| `/bbq.pantry <id>` | Research phase |
-| `/bbq.prep <id>` | Technical planning |
-| `/bbq.fire <id>` | Implementation |
+| `/bbq.pantry <id>` | Research — gather context, check learnings |
+| `/bbq.prep <id>` | Planning — technical design |
+| `/bbq.fire <id>` | Implementation — code, test, PR |
 | `/bbq.taste <id>` | Address review comments |
-| `/bbq.rules` | Set up house rules |
-| `/bbq.learn` | Extract learnings |
+| `/bbq.rules` | Set up project house rules |
+| `/bbq.learn` | Extract learnings from session |
 
-### Skills
-
-- `git-branch-create`: Create branches with proper naming
-- `git-commit`: Conventional commits with ticket refs
-- `git-push-remote`: Push with upstream tracking
-- `git-find-ticket-branch`: Find branch by ticket ID
-- `progress-doc`: Track progress in `docs/progress/`
-- `learnings`: Manage project knowledge base
-
-### Learnings System
+## Learnings System
 
 Store insights in `docs/learnings/`:
 
-- `gotchas.md`: Traps and pitfalls
-- `patterns.md`: How things are done here
-- `decisions.md`: Architectural choices with rationale
-- `discoveries.md`: How things work
+| File | Content |
+|------|---------|
+| `gotchas.md` | Traps, pitfalls, unexpected behavior |
+| `patterns.md` | "How we do X here" conventions |
+| `decisions.md` | Architectural choices with rationale |
+| `discoveries.md` | How things work in the codebase |
 
-## Environment Variables
-
-Required for GitHub App MCP:
-
-```bash
-BBQ_LINEAR_API_KEY        # Linear API key
-BBQ_GITHUB_APP_ID         # GitHub App ID
-BBQ_GITHUB_APP_INSTALLATION_ID  # Installation ID
-BBQ_GITHUB_APP_PRIVATE_KEY      # Base64-encoded private key
-```
-
-## Security Rules
-
-- Never commit `.pem` files (private keys)
-- Use environment variables for secrets
-- Limit GitHub App permissions to what's needed
-- Do not commit credentials.json, .env, or similar files
+Check learnings before starting work. Document new insights after implementation.
