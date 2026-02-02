@@ -4,6 +4,28 @@ A Model Context Protocol (MCP) server that authenticates as a GitHub App. This i
 
 > *The grill does the cooking. You take the credit.*
 
+> **Note:** This custom MCP server is only used when you choose **GitHub Application** authentication during init. If you're using **Personal Access Token (PAT)** authentication, BBQ Party uses [GitHub's official MCP server](https://github.com/github/github-mcp-server) instead, which provides 60+ tools.
+
+## When to Use This vs PAT
+
+| Feature | GitHub App (this MCP) | PAT (official MCP) |
+|---------|----------------------|-------------------|
+| **Identity** | Bot identity | User identity |
+| **Available tools** | 12 essential tools | 60+ tools |
+| **Setup complexity** | More complex | Simple |
+| **Audit trail** | Clear separation | Actions as user |
+| **Best for** | Production, teams | Personal use, quick start |
+
+**Choose GitHub App if:**
+- You want AI actions to appear as a bot, not as you
+- You need clear audit separation between human and AI commits
+- You're working in a team environment
+
+**Choose PAT if:**
+- You want quick setup
+- You need access to more GitHub features (60+ tools)
+- You're okay with actions appearing as your user (or a dedicated service account)
+
 ## Features
 
 - **Bot Identity** — Actions appear as your app, not your personal account

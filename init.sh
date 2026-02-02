@@ -6,15 +6,17 @@
 #   ./init.sh <target-project-path> [options]
 #
 # Options:
-#   --pem <path>        Path to GitHub App private key (.pem file)
-#   --skip-docker       Skip Docker image build (if already built)
-#   --skip-env          Skip environment variable setup
-#   --help              Show this help message
+#   --auth-method <app|pat>  GitHub authentication method (default: pat)
+#   --pem <path>             Path to GitHub App private key (.pem file) [requires --auth-method app]
+#   --skip-docker            Skip Docker image build/pull
+#   --skip-env               Skip environment variable setup
+#   --help                   Show this help message
 #
 # Examples:
-#   ./init.sh /path/to/my-project --pem ~/keys/github-app.pem
+#   ./init.sh /path/to/my-project
+#   ./init.sh /path/to/my-project --auth-method pat
+#   ./init.sh /path/to/my-project --auth-method app --pem ~/keys/github-app.pem
 #   ./init.sh . --skip-docker
-#   ./init.sh /path/to/project --skip-env
 
 set -e
 
@@ -27,17 +29,27 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 ORANGE='\033[0;33m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Default options
 TARGET_PATH=""
 PEM_PATH=""
+AUTH_METHOD=""
 SKIP_DOCKER=false
 SKIP_ENV=false
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
 	case $1 in
+	--auth-method)
+		AUTH_METHOD="$2"
+		if [[ "$AUTH_METHOD" != "app" && "$AUTH_METHOD" != "pat" ]]; then
+			echo -e "${RED}🔥 Invalid auth method: $AUTH_METHOD (use 'app' or 'pat')${NC}"
+			exit 1
+		fi
+		shift 2
+		;;
 	--pem)
 		PEM_PATH="$2"
 		shift 2
@@ -56,14 +68,18 @@ while [[ $# -gt 0 ]]; do
 		echo "Usage: $0 <target-project-path> [options]"
 		echo ""
 		echo "Options:"
-		echo "  --pem <path>        Path to GitHub App private key (secret sauce)"
-		echo "  --skip-docker       Skip firing up the grill"
-		echo "  --skip-env          Skip stocking the pantry"
-		echo "  --help              Show this menu"
+		echo "  --auth-method <app|pat>  GitHub auth method (default: pat)"
+		echo "                           pat = Personal Access Token (official GitHub MCP)"
+		echo "                           app = GitHub Application (custom MCP)"
+		echo "  --pem <path>             Path to GitHub App private key [requires --auth-method app]"
+		echo "  --skip-docker            Skip firing up the grill"
+		echo "  --skip-env               Skip stocking the pantry"
+		echo "  --help                   Show this menu"
 		echo ""
 		echo "Examples:"
-		echo "  $0 /path/to/my-project --pem ~/keys/github-app.pem"
-		echo "  $0 . --skip-docker"
+		echo "  $0 /path/to/my-project"
+		echo "  $0 /path/to/my-project --auth-method pat"
+		echo "  $0 /path/to/my-project --auth-method app --pem ~/keys/github-app.pem"
 		exit 0
 		;;
 	-*)
@@ -108,25 +124,80 @@ echo ""
 echo -e "  Kitchen location: ${GREEN}$TARGET_PATH${NC}"
 echo ""
 
-# Step 1: Build Docker image
+# Authentication method selection
+echo -e "${YELLOW}━━━ 🔐 GitHub Authentication ━━━${NC}"
+if [ -z "$AUTH_METHOD" ]; then
+	echo "  How would you like to authenticate the AI agent?"
+	echo ""
+	echo -e "  ${CYAN}[1]${NC} Personal Access Token (PAT) - user/service account identity"
+	echo -e "      ${GREEN}+ Easier setup, 60+ tools via official GitHub MCP${NC}"
+	echo -e "      ${YELLOW}- Actions appear as the PAT owner${NC}"
+	echo ""
+	echo -e "  ${CYAN}[2]${NC} GitHub Application - dedicated bot identity"
+	echo -e "      ${GREEN}+ Actions appear as the app (bot identity)${NC}"
+	echo -e "      ${YELLOW}- More complex setup, 12 tools via custom MCP${NC}"
+	echo ""
+	read -p "  Select [1]: " -n 1 -r auth_choice
+	echo
+	
+	case $auth_choice in
+	2)
+		AUTH_METHOD="app"
+		echo -e "  ${GREEN}✓ Using GitHub Application authentication${NC}"
+		;;
+	*)
+		AUTH_METHOD="pat"
+		echo -e "  ${GREEN}✓ Using Personal Access Token authentication${NC}"
+		;;
+	esac
+else
+	if [ "$AUTH_METHOD" = "pat" ]; then
+		echo -e "  ${GREEN}✓ Using Personal Access Token authentication${NC}"
+	else
+		echo -e "  ${GREEN}✓ Using GitHub Application authentication${NC}"
+	fi
+fi
+
+# Validate --pem is only used with app auth
+if [ -n "$PEM_PATH" ] && [ "$AUTH_METHOD" = "pat" ]; then
+	echo -e "${YELLOW}  ⚠ Note: --pem flag is ignored when using PAT authentication${NC}"
+	PEM_PATH=""
+fi
+
+echo ""
+
+# Step 1: Docker image handling
 echo -e "${YELLOW}━━━ 🔥 Step 1: Fire Up the Grill ━━━${NC}"
 if [ "$SKIP_DOCKER" = true ]; then
 	echo -e "  Skipping (grill already hot)"
-elif docker image inspect bbqparty/github-app-mcp >/dev/null 2>&1; then
-	echo -e "  Grill ${GREEN}bbqparty/github-app-mcp${NC} is already hot"
-	read -p "  Reheat? [y/N] " -n 1 -r
-	echo
-	if [[ $REPLY =~ ^[Yy]$ ]]; then
+elif [ "$AUTH_METHOD" = "pat" ]; then
+	# Pull official GitHub MCP server
+	echo "  Pulling official GitHub MCP server..."
+	if docker pull ghcr.io/github/github-mcp-server; then
+		echo -e "  ${GREEN}✓ Grill is hot and ready${NC}"
+	else
+		echo -e "  ${RED}✗ Failed to pull image${NC}"
+		echo -e "  ${YELLOW}If you see auth errors, try: docker logout ghcr.io${NC}"
+		exit 1
+	fi
+else
+	# Build custom GitHub App MCP (existing behavior)
+	if docker image inspect bbqparty/github-app-mcp >/dev/null 2>&1; then
+		echo -e "  Grill ${GREEN}bbqparty/github-app-mcp${NC} is already hot"
+		read -p "  Reheat? [y/N] " -n 1 -r
+		echo
+		if [[ $REPLY =~ ^[Yy]$ ]]; then
+			echo "  Firing up the grill..."
+			docker build -t bbqparty/github-app-mcp "$SCRIPT_DIR/mcp/github-app"
+			echo -e "  ${GREEN}✓ Grill is hot and ready${NC}"
+		else
+			echo "  Keeping current temperature"
+		fi
+	else
 		echo "  Firing up the grill..."
 		docker build -t bbqparty/github-app-mcp "$SCRIPT_DIR/mcp/github-app"
 		echo -e "  ${GREEN}✓ Grill is hot and ready${NC}"
-	else
-		echo "  Keeping current temperature"
 	fi
-else
-	echo "  Firing up the grill..."
-	docker build -t bbqparty/github-app-mcp "$SCRIPT_DIR/mcp/github-app"
-	echo -e "  ${GREEN}✓ Grill is hot and ready${NC}"
 fi
 echo ""
 
@@ -134,26 +205,50 @@ echo ""
 echo -e "${YELLOW}━━━ 🧂 Step 2: Stock the Pantry ━━━${NC}"
 if [ "$SKIP_ENV" = true ]; then
 	echo -e "  Skipping (pantry already stocked)"
-elif [ -n "$PEM_PATH" ]; then
-	if [ ! -f "$PEM_PATH" ]; then
-		echo -e "  ${RED}🔥 Secret sauce not found: $PEM_PATH${NC}"
-		exit 1
-	fi
-	echo "  Adding the secret sauce..."
-	"$SCRIPT_DIR/mcp/github-app/scripts/setup-github-key.sh" "$PEM_PATH"
-	echo -e "  ${GREEN}✓ Secret sauce secured${NC}"
-else
-	echo -e "  ${YELLOW}No secret sauce provided (--pem)${NC}"
-	echo ""
-	echo "  Stock these ingredients in ~/.zshenv:"
+elif [ "$AUTH_METHOD" = "pat" ]; then
+	# PAT setup
+	echo -e "  Add these ingredients to ${CYAN}~/.zshenv${NC}:"
 	echo ""
 	echo "    export BBQ_LINEAR_API_KEY=\"lin_api_xxxxx\""
-	echo "    export BBQ_GITHUB_APP_ID=\"123456\""
-	echo "    export BBQ_GITHUB_APP_INSTALLATION_ID=\"12345678\""
-	echo "    export BBQ_GITHUB_APP_PRIVATE_KEY=\"<base64-encoded-key>\""
+	echo "    export BBQ_GITHUB_PAT=\"github_pat_xxxxx\""
 	echo ""
-	echo "  Or run the prep script later:"
-	echo "    $SCRIPT_DIR/mcp/github-app/scripts/setup-github-key.sh /path/to/key.pem"
+	echo -e "  ${BLUE}Tip:${NC} Create a dedicated GitHub account for the AI agent"
+	echo -e "       to use as a 'service account' for cleaner audit trails."
+	echo ""
+	echo -e "  ${BLUE}Create a Fine-Grained PAT:${NC}"
+	echo -e "    ${CYAN}https://github.com/settings/personal-access-tokens/new${NC}"
+	echo ""
+	echo -e "  ${BLUE}Required Repository Permissions:${NC}"
+	echo "    • Contents: Read and write"
+	echo "    • Issues: Read and write"
+	echo "    • Pull requests: Read and write"
+	echo "    • Metadata: Read-only (auto-selected)"
+	echo ""
+	echo -e "  ${BLUE}Optional Organization Permissions:${NC}"
+	echo "    • Members: Read-only (for team features)"
+else
+	# GitHub App setup (existing behavior)
+	if [ -n "$PEM_PATH" ]; then
+		if [ ! -f "$PEM_PATH" ]; then
+			echo -e "  ${RED}🔥 Secret sauce not found: $PEM_PATH${NC}"
+			exit 1
+		fi
+		echo "  Adding the secret sauce..."
+		"$SCRIPT_DIR/mcp/github-app/scripts/setup-github-key.sh" "$PEM_PATH"
+		echo -e "  ${GREEN}✓ Secret sauce secured${NC}"
+	else
+		echo -e "  ${YELLOW}No secret sauce provided (--pem)${NC}"
+		echo ""
+		echo -e "  Add these ingredients to ${CYAN}~/.zshenv${NC}:"
+		echo ""
+		echo "    export BBQ_LINEAR_API_KEY=\"lin_api_xxxxx\""
+		echo "    export BBQ_GITHUB_APP_ID=\"123456\""
+		echo "    export BBQ_GITHUB_APP_INSTALLATION_ID=\"12345678\""
+		echo "    export BBQ_GITHUB_APP_PRIVATE_KEY=\"<base64-encoded-key>\""
+		echo ""
+		echo "  Or run the prep script later:"
+		echo "    $SCRIPT_DIR/mcp/github-app/scripts/setup-github-key.sh /path/to/key.pem"
+	fi
 fi
 echo ""
 
@@ -161,6 +256,13 @@ echo ""
 echo -e "${YELLOW}━━━ 📋 Step 3: Hang the Menu ━━━${NC}"
 
 OPENCODE_SOURCE="$SCRIPT_DIR/packages/opencode"
+
+# Select the correct template based on auth method
+if [ "$AUTH_METHOD" = "pat" ]; then
+	OPENCODE_JSON_TEMPLATE="$OPENCODE_SOURCE/opencode.github-pat.json"
+else
+	OPENCODE_JSON_TEMPLATE="$OPENCODE_SOURCE/opencode.github-app.json"
+fi
 
 # Check if .opencode already exists
 if [ -d "$TARGET_PATH/.opencode" ]; then
@@ -188,12 +290,12 @@ if [ -f "$TARGET_PATH/opencode.json" ]; then
 	if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 		echo "  Keeping old config"
 	else
-		cp "$OPENCODE_SOURCE/opencode.json" "$TARGET_PATH/"
-		echo -e "  ${GREEN}✓ Config updated${NC}"
+		cp "$OPENCODE_JSON_TEMPLATE" "$TARGET_PATH/opencode.json"
+		echo -e "  ${GREEN}✓ Config updated (${AUTH_METHOD} mode)${NC}"
 	fi
 else
-	cp "$OPENCODE_SOURCE/opencode.json" "$TARGET_PATH/"
-	echo -e "  ${GREEN}✓ Config installed${NC}"
+	cp "$OPENCODE_JSON_TEMPLATE" "$TARGET_PATH/opencode.json"
+	echo -e "  ${GREEN}✓ Config installed (${AUTH_METHOD} mode)${NC}"
 fi
 
 echo ""
@@ -202,10 +304,11 @@ echo -e "${GREEN}║              🍖 KITCHEN IS OPEN! 🍖                    
 echo -e "${GREEN}╚══════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "  Kitchen ready at: ${GREEN}$TARGET_PATH${NC}"
+echo -e "  Auth method: ${CYAN}$AUTH_METHOD${NC}"
 echo ""
 echo -e "${BLUE}  Next steps:${NC}"
 echo ""
-if [ -z "$PEM_PATH" ] && [ "$SKIP_ENV" = false ]; then
+if [ "$SKIP_ENV" = false ]; then
 	echo "    1. Stock the pantry (see ingredients above)"
 	echo "    2. source ~/.zshenv"
 	echo "    3. cd $TARGET_PATH && opencode"

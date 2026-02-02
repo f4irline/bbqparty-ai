@@ -79,44 +79,89 @@ bbqparty/
 ### Quick Start (Recommended)
 
 ```bash
-# Fire up a new kitchen
-./init.sh /path/to/your/project --pem /path/to/github-app-key.pem
+# Fire up a new kitchen (interactive mode)
+./init.sh /path/to/your/project
 ```
+
+The init script will ask you to choose an authentication method:
+
+| Method | Best For | Identity |
+|--------|----------|----------|
+| **Personal Access Token (PAT)** | Simple setup, full GitHub API | Actions appear as the PAT owner |
+| **GitHub Application** | Bot identity, audit separation | Actions appear as the app |
 
 This will:
-1. 🔥 Fire up the grill (build Docker image)
-2. 🧂 Stock the pantry (configure credentials)  
-3. 📋 Hang the menu (copy OpenCode config)
+1. 🔐 Choose authentication method (PAT or GitHub App)
+2. 🔥 Fire up the grill (pull/build Docker image)
+3. 🧂 Stock the pantry (configure credentials)  
+4. 📋 Hang the menu (copy OpenCode config)
 
-### Manual Setup
+### Authentication Options
 
-<details>
-<summary>Click to expand manual instructions</summary>
+#### Option 1: Personal Access Token (Default)
 
-#### 1. Fire Up the Grill
-
-```bash
-cd mcp/github-app
-docker build -t bbqparty/github-app-mcp .
-```
-
-#### 2. Get Your Ingredients (GitHub App)
-
-See [mcp/github-app/README.md](mcp/github-app/README.md) for the full recipe:
-
-1. Create a GitHub App (your kitchen's identity)
-2. Install it on your repo
-3. Download the secret ingredient (private key)
-4. Run the prep script:
+The simplest setup. Uses [GitHub's official MCP server](https://github.com/github/github-mcp-server) with 60+ tools.
 
 ```bash
-./scripts/setup-github-key.sh /path/to/private-key.pem
+./init.sh /path/to/your/project --auth-method pat
 ```
 
-#### 3. Stock the Pantry (Environment Variables)
+**Pros:**
+- Easy setup — just create a PAT
+- 60+ GitHub tools available
+- Can use a dedicated "service account" GitHub user
 
-Add to `~/.zshenv`:
+**Cons:**
+- Actions appear as the PAT owner
+- PAT needs broad permissions
 
+**Creating a Fine-Grained Personal Access Token:**
+
+1. Go to **GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens**
+   - Direct link: https://github.com/settings/personal-access-tokens/new
+2. Configure the token:
+   - **Token name**: e.g., `BBQ Party MCP`
+   - **Expiration**: Choose an appropriate expiration (90 days recommended)
+   - **Repository access**: Select "All repositories" or choose specific repos
+3. Set **Repository permissions** (required for BBQ Party):
+   | Permission | Access Level | Used For |
+   |------------|--------------|----------|
+   | **Contents** | Read and write | Reading/writing files, creating branches |
+   | **Issues** | Read and write | Creating and managing issues |
+   | **Pull requests** | Read and write | Creating and managing PRs |
+   | **Metadata** | Read-only | Basic repository info (auto-selected) |
+4. Set **Organization permissions** (optional, for org features):
+   | Permission | Access Level | Used For |
+   |------------|--------------|----------|
+   | **Members** | Read-only | Team access and mentions |
+5. Click **Generate token** and copy the token (starts with `github_pat_`)
+
+**Environment variables needed:**
+```bash
+export BBQ_LINEAR_API_KEY="lin_api_xxxxx"
+export BBQ_GITHUB_PAT="github_pat_xxxxx"
+```
+
+> **Tip:** Consider creating a dedicated GitHub account as a "service account" for cleaner audit trails. The AI's actions will appear as that account.
+
+#### Option 2: GitHub Application
+
+Use a dedicated bot identity. Uses custom MCP server with 12 essential tools.
+
+```bash
+./init.sh /path/to/your/project --auth-method app --pem /path/to/key.pem
+```
+
+**Pros:**
+- Actions appear as the app (bot identity)
+- Clear audit trail — bot commits vs human commits
+- Fine-grained repository permissions
+
+**Cons:**
+- More complex setup (create app, install, get keys)
+- Fewer tools (12 vs 60+)
+
+**Environment variables needed:**
 ```bash
 export BBQ_LINEAR_API_KEY="lin_api_xxxxx"
 export BBQ_GITHUB_APP_ID="123456"
@@ -124,16 +169,60 @@ export BBQ_GITHUB_APP_INSTALLATION_ID="12345678"
 export BBQ_GITHUB_APP_PRIVATE_KEY="<base64-encoded-key>"
 ```
 
-#### 4. Copy the Recipe Book
+See [mcp/github-app/README.md](mcp/github-app/README.md) for detailed GitHub App setup.
+
+### Manual Setup
+
+<details>
+<summary>Click to expand manual instructions</summary>
+
+#### For PAT Authentication
+
+1. Create a Fine-Grained PAT at https://github.com/settings/personal-access-tokens/new
+   - **Repository permissions**: Contents (R/W), Issues (R/W), Pull requests (R/W), Metadata (R)
+   - **Organization permissions** (optional): Members (R)
+2. Add to `~/.zshenv`:
+   ```bash
+   export BBQ_LINEAR_API_KEY="lin_api_xxxxx"
+   export BBQ_GITHUB_PAT="github_pat_xxxxx"
+   ```
+3. Pull the official GitHub MCP:
+   ```bash
+   docker pull ghcr.io/github/github-mcp-server
+   ```
+4. Copy the config:
+   ```bash
+   cp -r /path/to/bbqparty/packages/opencode/.opencode .
+   cp /path/to/bbqparty/packages/opencode/opencode.github-pat.json ./opencode.json
+   ```
+
+#### For GitHub App Authentication
+
+1. Create a GitHub App (see [mcp/github-app/README.md](mcp/github-app/README.md))
+2. Install it on your repo
+3. Download the private key
+4. Add to `~/.zshenv`:
+   ```bash
+   export BBQ_LINEAR_API_KEY="lin_api_xxxxx"
+   export BBQ_GITHUB_APP_ID="123456"
+   export BBQ_GITHUB_APP_INSTALLATION_ID="12345678"
+   export BBQ_GITHUB_APP_PRIVATE_KEY="<base64-encoded-key>"
+   ```
+5. Build the custom MCP:
+   ```bash
+   cd mcp/github-app
+   docker build -t bbqparty/github-app-mcp .
+   ```
+6. Copy the config:
+   ```bash
+   cp -r /path/to/bbqparty/packages/opencode/.opencode .
+   cp /path/to/bbqparty/packages/opencode/opencode.github-app.json ./opencode.json
+   ```
+
+#### Open for Business
 
 ```bash
-cp -r /path/to/bbqparty/packages/opencode/.opencode .
-cp /path/to/bbqparty/packages/opencode/opencode.json .
-```
-
-#### 5. Open for Business
-
-```bash
+source ~/.zshenv
 opencode
 ```
 
@@ -190,7 +279,9 @@ Drop this into any project. It's got everything your sous chef needs:
 
 ### 🔥 The Grill (`mcp/github-app/`)
 
-A Docker-based GitHub MCP server. Actions appear as your bot, not your personal account. No more "why is the chef's name on every dish?"
+A Docker-based GitHub MCP server for **GitHub App authentication**. Actions appear as your bot, not your personal account. No more "why is the chef's name on every dish?"
+
+> **Note:** If you're using PAT authentication, this custom MCP is not used — you'll use GitHub's official MCP server instead.
 
 ---
 
