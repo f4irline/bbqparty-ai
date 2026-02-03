@@ -61,11 +61,17 @@ Ensure all tests pass before proceeding.
 
 **IMPORTANT: Only proceed with this section AFTER all implementation, testing, documentation, and learnings are complete. Do NOT push or create a PR until everything else is finished.**
 
-13. Use the git-push-remote skill to push all commits to remote
-14. Create a pull request using GitHub MCP with:
+13. **Finalize progress documentation**: Update the progress document with:
+    - Status changed to "Complete"
+    - Final progress log entry summarizing what was accomplished
+    - All task checkboxes updated
+    - Complete list of files changed
+    - **Commit this update** using the git-commit skill before proceeding
+14. Use the git-push-remote skill to push all commits to remote
+15. Create a pull request using GitHub MCP with:
     - Clear title referencing the ticket
     - Description summarizing changes
     - Link to the Linear ticket
-15. Move the ticket to "In Review" status using Linear MCP
+16. Move the ticket to "In Review" status using Linear MCP
 
 **Do NOT make any additional commits after pushing. If you discover something needs to change, do it BEFORE this step.**
