@@ -55,7 +55,12 @@ Optional, indicates the component affected:
 
 ## Steps
 
-1. **Stage changes**:
+1. **Get authenticated identity for commit attribution** (recommended):
+   - If a GitHub MCP server is available, call the `get_authenticated_user` tool (GitHub App) or `get_me` tool (PAT/official MCP)
+   - This returns the bot/user identity (`name` and `email`) to use for commits
+   - If the tool is unavailable or fails, proceed with default git config (graceful fallback)
+
+2. **Stage changes**:
    ```bash
    git add -A
    ```
@@ -65,12 +70,24 @@ Optional, indicates the component affected:
    git add path/to/file1 path/to/file2
    ```
 
-2. **Review staged changes**:
+3. **Review staged changes**:
    ```bash
    git diff --staged --stat
    ```
 
-3. **Create commit**:
+4. **Create commit**:
+
+   **If authenticated identity was retrieved**, use environment variables to set both author and committer:
+   ```bash
+   GIT_AUTHOR_NAME="{name}" GIT_AUTHOR_EMAIL="{email}" GIT_COMMITTER_NAME="{name}" GIT_COMMITTER_EMAIL="{email}" git commit -m "{type}({scope}): {description}" -m "{body}" -m "Refs: {ticket-id}"
+   ```
+
+   Example with bot identity:
+   ```bash
+   GIT_AUTHOR_NAME="my-app[bot]" GIT_AUTHOR_EMAIL="123456+my-app[bot]@users.noreply.github.com" GIT_COMMITTER_NAME="my-app[bot]" GIT_COMMITTER_EMAIL="123456+my-app[bot]@users.noreply.github.com" git commit -m "feat(api): add endpoint" -m "Add new endpoint for user authentication" -m "Refs: STU-15"
+   ```
+
+   **If no authenticated identity** (fallback), use standard commit:
    ```bash
    git commit -m "{type}({scope}): {description}" -m "{body}" -m "Refs: {ticket-id}"
    ```

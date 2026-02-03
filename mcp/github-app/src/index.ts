@@ -280,6 +280,15 @@ const tools = [
       required: ["thread_id"],
     },
   },
+  {
+    name: "get_authenticated_user",
+    description: "Get the authenticated GitHub App bot identity for use as git commit author/committer. Returns name and email in the format expected by git.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {},
+      required: [],
+    },
+  },
 ];
 
 // Register tools handler
@@ -751,6 +760,40 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                   thread_id: response.unresolveReviewThread.thread.id,
                   is_resolved: response.unresolveReviewThread.thread.isResolved,
                   message: "Review thread unresolved successfully",
+                },
+                null,
+                2
+              ),
+            },
+          ],
+        };
+      }
+
+      case "get_authenticated_user": {
+        // Get the GitHub App info to construct the bot identity
+        const appResponse = await octokit.apps.getAuthenticated();
+        
+        if (!appResponse.data) {
+          throw new Error("Failed to get authenticated app information");
+        }
+        
+        const appSlug = appResponse.data.slug;
+        const appId = appResponse.data.id;
+
+        // GitHub App bot format: app-name[bot] and ID+app-name[bot]@users.noreply.github.com
+        const botName = `${appSlug}[bot]`;
+        const botEmail = `${appId}+${appSlug}[bot]@users.noreply.github.com`;
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                {
+                  name: botName,
+                  email: botEmail,
+                  type: "github_app",
+                  author_string: `${botName} <${botEmail}>`,
                 },
                 null,
                 2
