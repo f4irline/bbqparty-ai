@@ -19,15 +19,10 @@ Follow these steps:
    b. Make the necessary changes
    c. Create a focused commit addressing that specific comment using the git-commit skill
    d. Resolve that comment in GitHub using GitHub MCP once the change is in place
-6. Use the git-push-remote skill to push all commits
-7. Add a summary comment to the PR using GitHub MCP explaining:
-   - What changes were made
-   - How each comment was addressed
-   - Any items that need further discussion
 
 ## Write Down What You Learned
 
-8. **Extract learnings** from addressing these review comments — but only if something technically relevant was learned:
+6. **Extract learnings** from addressing these review comments — but only if something technically relevant was learned:
    - A surprising API behavior or gotcha worth remembering
    - A workaround for a bug or limitation
    - A pattern that should be followed in the future
@@ -35,18 +30,31 @@ Follow these steps:
    
    Skip this step if the changes were straightforward and nothing noteworthy emerged.
    
-9. For each learning worth documenting:
+7. For each learning worth documenting:
    - Categorize it (gotcha, pattern, decision, or discovery)
    - Create `docs/learnings/` directory if it doesn't exist
    - Append the learning to the appropriate file with ticket ID and date using the `learnings` skill
+   - **Commit any new learnings** using the git-commit skill
    
-10. Summarize what was documented:
-    ```
-    Documented X learnings:
-    - gotchas.md: "Title"
-    - patterns.md: "Title"
-    ```
-    
-    If nothing noteworthy was learned, say so briefly and move on.
+8. Summarize what was documented:
+   ```
+   Documented X learnings:
+   - gotchas.md: "Title"
+   - patterns.md: "Title"
+   ```
+   
+   If nothing noteworthy was learned, say so briefly and move on.
+
+## Push Changes (FINAL STEP)
+
+**IMPORTANT: Only proceed with this section AFTER all changes, documentation, and learnings are complete. Do NOT push until everything else is finished.**
+
+9. Use the git-push-remote skill to push all commits to remote
+10. Add a summary comment to the PR using GitHub MCP explaining:
+    - What changes were made
+    - How each comment was addressed
+    - Any items that need further discussion
+
+**Do NOT make any additional commits after pushing. If you discover something needs to change, do it BEFORE this step.**
 
 Be thorough in addressing feedback and clear in your responses.

@@ -29,18 +29,12 @@ Follow these steps:
    e. Update progress documentation as you go
 8. After implementation is complete, the validate-changes plugin will automatically run lint, build, and tests
 9. Use the git-commit skill to commit changes with proper message format
-10. Use the git-push-remote skill to push commits to remote
-11. Create a pull request using GitHub MCP with:
-    - Clear title referencing the ticket
-    - Description summarizing changes
-    - Link to the Linear ticket
-12. Move the ticket to "In Review" status using Linear MCP
 
-Ensure all tests pass before creating the PR.
+Ensure all tests pass before proceeding.
 
 ## Write Down What You Learned
 
-13. **Extract learnings** from this implementation session — but only if something technically relevant was learned:
+10. **Extract learnings** from this implementation session — but only if something technically relevant was learned:
     - A surprising API behavior or gotcha worth remembering
     - A workaround for a bug or limitation
     - A pattern that should be followed in the future
@@ -48,12 +42,13 @@ Ensure all tests pass before creating the PR.
     
     Skip this step if the work was routine and nothing noteworthy emerged.
     
-14. For each learning worth documenting:
+11. For each learning worth documenting:
     - Categorize it (gotcha, pattern, decision, or discovery)
     - Create `docs/learnings/` directory if it doesn't exist
     - Append the learning to the appropriate file with ticket ID and date using the `learnings` skill
+    - **Commit any new learnings** using the git-commit skill
     
-15. Summarize what was documented:
+12. Summarize what was documented:
     ```
     Documented X learnings:
     - gotchas.md: "Title"
@@ -61,3 +56,16 @@ Ensure all tests pass before creating the PR.
     ```
     
     If nothing noteworthy was learned, say so briefly and move on.
+
+## Push and Create PR (FINAL STEP)
+
+**IMPORTANT: Only proceed with this section AFTER all implementation, testing, documentation, and learnings are complete. Do NOT push or create a PR until everything else is finished.**
+
+13. Use the git-push-remote skill to push all commits to remote
+14. Create a pull request using GitHub MCP with:
+    - Clear title referencing the ticket
+    - Description summarizing changes
+    - Link to the Linear ticket
+15. Move the ticket to "In Review" status using Linear MCP
+
+**Do NOT make any additional commits after pushing. If you discover something needs to change, do it BEFORE this step.**
