@@ -8,6 +8,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { Octokit } from "@octokit/rest";
 import { createAppAuth } from "@octokit/auth-app";
+import { graphql } from "@octokit/graphql";
 import * as fs from "fs";
 
 // Environment variables
@@ -56,6 +57,25 @@ const octokit = new Octokit({
     appId: GITHUB_APP_ID,
     privateKey: privateKey,
     installationId: Number(GITHUB_APP_INSTALLATION_ID),
+  },
+});
+
+// Create authenticated GraphQL client for GitHub App
+const graphqlWithAuth = graphql.defaults({
+  request: {
+    hook: async (request: any, options: any) => {
+      const auth = createAppAuth({
+        appId: GITHUB_APP_ID!,
+        privateKey: privateKey,
+        installationId: Number(GITHUB_APP_INSTALLATION_ID),
+      });
+      const { token } = await auth({ type: "installation" });
+      options.headers = {
+        ...options.headers,
+        authorization: `token ${token}`,
+      };
+      return request(options);
+    },
   },
 });
 
@@ -238,6 +258,28 @@ const tools = [
       required: ["owner", "repo", "path"],
     },
   },
+  {
+    name: "resolve_review_thread",
+    description: "Marks a pull request review thread as resolved. Requires the thread's GraphQL node ID (starts with PRRT_).",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        thread_id: { type: "string", description: "The GraphQL node ID of the review thread (e.g., PRRT_...)" },
+      },
+      required: ["thread_id"],
+    },
+  },
+  {
+    name: "unresolve_review_thread",
+    description: "Marks a pull request review thread as unresolved. Requires the thread's GraphQL node ID (starts with PRRT_).",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        thread_id: { type: "string", description: "The GraphQL node ID of the review thread (e.g., PRRT_...)" },
+      },
+      required: ["thread_id"],
+    },
+  },
 ];
 
 // Register tools handler
@@ -375,25 +417,61 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "list_pr_comments": {
         const { owner, repo, pull_number } = args as any;
-        // Get both review comments and issue comments
-        const [reviewComments, issueComments] = await Promise.all([
-          octokit.pulls.listReviewComments({ owner, repo, pull_number }),
+        // Get both review comments (with thread info via GraphQL) and issue comments
+        const [issueComments, reviewThreadsResponse] = await Promise.all([
           octokit.issues.listComments({ owner, repo, issue_number: pull_number }),
+          graphqlWithAuth<any>(`
+            query GetPRReviewThreads($owner: String!, $repo: String!, $pull_number: Int!) {
+              repository(owner: $owner, name: $repo) {
+                pullRequest(number: $pull_number) {
+                  reviewThreads(first: 100) {
+                    nodes {
+                      id
+                      isResolved
+                      isOutdated
+                      path
+                      line
+                      comments(first: 100) {
+                        nodes {
+                          id
+                          databaseId
+                          body
+                          author {
+                            login
+                          }
+                          createdAt
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          `, { owner, repo, pull_number }),
         ]);
+
+        const reviewThreads = reviewThreadsResponse.repository.pullRequest.reviewThreads.nodes.map((thread: any) => ({
+          thread_id: thread.id,
+          is_resolved: thread.isResolved,
+          is_outdated: thread.isOutdated,
+          path: thread.path,
+          line: thread.line,
+          comments: thread.comments.nodes.map((c: any) => ({
+            id: c.databaseId,
+            node_id: c.id,
+            body: c.body,
+            user: c.author?.login,
+            created_at: c.createdAt,
+          })),
+        }));
+
         return {
           content: [
             {
               type: "text",
               text: JSON.stringify(
                 {
-                  review_comments: reviewComments.data.map((c) => ({
-                    id: c.id,
-                    body: c.body,
-                    user: c.user?.login,
-                    path: c.path,
-                    line: c.line,
-                    created_at: c.created_at,
-                  })),
+                  review_threads: reviewThreads,
                   issue_comments: issueComments.data.map((c) => ({
                     id: c.id,
                     body: c.body,
@@ -618,6 +696,68 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             ],
           };
         }
+      }
+
+      case "resolve_review_thread": {
+        const { thread_id } = args as any;
+        const mutation = `
+          mutation ResolveReviewThread($threadId: ID!) {
+            resolveReviewThread(input: { threadId: $threadId }) {
+              thread {
+                id
+                isResolved
+              }
+            }
+          }
+        `;
+        const response: any = await graphqlWithAuth(mutation, { threadId: thread_id });
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                {
+                  thread_id: response.resolveReviewThread.thread.id,
+                  is_resolved: response.resolveReviewThread.thread.isResolved,
+                  message: "Review thread resolved successfully",
+                },
+                null,
+                2
+              ),
+            },
+          ],
+        };
+      }
+
+      case "unresolve_review_thread": {
+        const { thread_id } = args as any;
+        const mutation = `
+          mutation UnresolveReviewThread($threadId: ID!) {
+            unresolveReviewThread(input: { threadId: $threadId }) {
+              thread {
+                id
+                isResolved
+              }
+            }
+          }
+        `;
+        const response: any = await graphqlWithAuth(mutation, { threadId: thread_id });
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                {
+                  thread_id: response.unresolveReviewThread.thread.id,
+                  is_resolved: response.unresolveReviewThread.thread.isResolved,
+                  message: "Review thread unresolved successfully",
+                },
+                null,
+                2
+              ),
+            },
+          ],
+        };
       }
 
       default:
