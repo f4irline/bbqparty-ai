@@ -31,6 +31,29 @@ Note: Replace `/` in branch names with `-` for the filename.
 
 {Brief description of what this ticket implements}
 
+## Workflow Checklist
+
+> **IMPORTANT**: This checklist ensures all workflow steps are completed, even after context compaction.
+> Check off each phase as you complete it. After ANY interruption, read this section first.
+
+### Phase 1: Implementation
+- [ ] Write/modify tests (TDD)
+- [ ] Implement changes
+- [ ] Validate (lint, build, tests pass) — validate-changes plugin runs automatically
+- [ ] Commit implementation changes — use `git-commit` skill
+
+### Phase 2: Learnings
+- [ ] Extract learnings (or note: nothing noteworthy)
+- [ ] Document learnings if any — use `learnings` skill
+- [ ] Commit learnings if any — use `git-commit` skill
+
+### Phase 3: Finalize & Push (DO NOT SKIP)
+- [ ] Update this progress doc to "Complete" status
+- [ ] Commit progress doc update — use `git-commit` skill
+- [ ] Push all commits to remote — use `git-push-remote` skill
+- [ ] Create pull request — use GitHub MCP
+- [ ] Move ticket to "In Review" — use Linear MCP
+
 ## Tasks
 
 - [ ] Task 1
@@ -116,6 +139,29 @@ Update the progress document:
 ## Overview
 
 Implement JWT-based authentication with login, logout, and token refresh.
+
+## Workflow Checklist
+
+> **IMPORTANT**: This checklist ensures all workflow steps are completed, even after context compaction.
+> Check off each phase as you complete it. After ANY interruption, read this section first.
+
+### Phase 1: Implementation
+- [x] Write/modify tests (TDD)
+- [x] Implement changes
+- [x] Validate (lint, build, tests pass) — validate-changes plugin runs automatically
+- [x] Commit implementation changes — use `git-commit` skill
+
+### Phase 2: Learnings
+- [ ] Extract learnings (or note: nothing noteworthy)
+- [ ] Document learnings if any — use `learnings` skill
+- [ ] Commit learnings if any — use `git-commit` skill
+
+### Phase 3: Finalize & Push (DO NOT SKIP)
+- [ ] Update this progress doc to "Complete" status
+- [ ] Commit progress doc update — use `git-commit` skill
+- [ ] Push all commits to remote — use `git-push-remote` skill
+- [ ] Create pull request — use GitHub MCP
+- [ ] Move ticket to "In Review" — use Linear MCP
 
 ## Tasks
 
