@@ -26,8 +26,8 @@ Follow these steps:
 
 ## Address Review Comments (Phase 1: Implementation)
 
-5. Read all review comments from the pull request using GitHub MCP
-6. For each review comment:
+5. Read all unresolved review comments from the pull request using GitHub MCP
+6. For each unresolved review comment:
    a. Understand the feedback
    b. Make the necessary changes
    c. Create a focused commit addressing that specific comment using the git-commit skill
