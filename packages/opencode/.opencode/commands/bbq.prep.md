@@ -48,7 +48,7 @@ Follow these steps:
    ### Database/Schema Changes
    [Describe changes or "None"]
 
-   ### Infra Changes
+   ### Infra/Terraform Changes
    [Describe changes or "None"]
 
    ### Test Strategy
