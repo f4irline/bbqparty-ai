@@ -22,6 +22,7 @@ Follow these steps:
    - Files to be modified or created
    - API changes (if any)
    - Database/schema changes (if any)
+   - Infra changes (if any)
    - Test strategy (unit tests, integration tests)
    - Potential breaking changes
    - **Relevant learnings** to keep in mind during implementation
@@ -45,6 +46,9 @@ Follow these steps:
    [Describe API changes or "None"]
 
    ### Database/Schema Changes
+   [Describe changes or "None"]
+   
+   ### Infra Changes
    [Describe changes or "None"]
 
    ### Test Strategy
