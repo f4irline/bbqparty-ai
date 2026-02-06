@@ -17,7 +17,7 @@ Follow these steps:
 
 3. Move the ticket to "In Research" status using Linear MCP
 4. **Check existing learnings**: If `docs/learnings/` exists, scan all files for learnings relevant to this ticket's domain. These may inform your research and save time.
-5. Research the codebase to understand the best approach for implementing this ticket
+5. Research the codebase to understand the best approach for implementing this ticket, including how it will work in a local development environment
 6. Ask clarifying questions if you need more information about:
    - Requirements or acceptance criteria
    - Technical constraints or preferences
@@ -41,6 +41,9 @@ Follow these steps:
 
    ### Dependencies
    [Any dependencies identified]
+
+   ### Local Development Notes
+   [Env vars, local services, fixtures/seeds, scripts, or "None"]
 
    ### Relevant Learnings
    [Learnings from docs/learnings/ if any apply, or "None identified"]

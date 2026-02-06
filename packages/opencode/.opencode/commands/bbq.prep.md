@@ -23,6 +23,7 @@ Follow these steps:
    - API changes (if any)
    - Database/schema changes (if any)
    - Infra changes (if any)
+   - Local development considerations (env vars, services, seeds, scripts)
    - Test strategy (unit tests, integration tests)
    - Potential breaking changes
    - **Relevant learnings** to keep in mind during implementation
@@ -53,6 +54,9 @@ Follow these steps:
 
    ### Documentation to Update
    Describe changes or "None"
+
+   ### Local Development Considerations
+   [Env vars, local services, fixtures/seeds, scripts, or "None"]
 
    ### Test Strategy
    - Unit tests: [what to test]
