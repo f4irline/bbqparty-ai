@@ -51,6 +51,9 @@ Follow these steps:
    ### Infra/Terraform Changes
    [Describe changes or "None"]
 
+   ### Documentation to Update
+   Describe changes or "None"
+
    ### Test Strategy
    - Unit tests: [what to test]
    - Integration tests: [what to test]
