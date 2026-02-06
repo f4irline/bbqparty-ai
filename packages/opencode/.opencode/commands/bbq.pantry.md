@@ -49,7 +49,7 @@ Follow these steps:
 
 ### If an existing research section exists in the description:
 
-3. Read any comments on the ticket — these may contain user feedback on the research
+3. Read any unresolved comments on the ticket — these may contain user feedback on the research
 4. Analyze the feedback to understand what needs to be adjusted
 5. Do additional research if the feedback requires it
 6. **Update the research section in the ticket description** to address the feedback:
