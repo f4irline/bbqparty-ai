@@ -33,6 +33,7 @@ Follow these steps:
    c. If there are API changes, write integration tests
    d. Implement the changes according to the plan
    e. Update progress documentation as you go
+   f. Use the git-commit skill to commit changes as you go and finish the tasks from progress document
 8. After implementation is complete, the validate-changes plugin will automatically run lint, build, and tests
 9. Use the git-commit skill to commit changes with proper message format
 10. **Update the Workflow Checklist**: Mark "Phase 1: Implementation" items as complete in the progress doc
