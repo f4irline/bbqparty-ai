@@ -26,8 +26,8 @@ Follow these steps:
 
 ## Address Review Comments (Phase 1: Implementation)
 
-5. Read all unresolved review comments from the pull request using GitHub MCP
-6. For each unresolved review comment:
+5. Use the `github-pr-feedback` skill to fetch unresolved review threads and PR conversation comments for this branch's pull request
+6. For each unresolved review comment/thread:
    a. Understand the feedback
    b. Make the necessary changes
    c. Create a focused commit addressing that specific comment using the git-commit skill
@@ -91,7 +91,7 @@ When creating a progress doc for review work, use this checklist instead of the 
 > Check off each phase as you complete it. After ANY interruption, read this section first.
 
 ### Phase 1: Address Review Comments
-- [ ] Read all PR review comments — use GitHub MCP
+- [ ] Fetch PR feedback (unresolved threads + comments) — use `github-pr-feedback` skill
 - [ ] Make changes for each comment
 - [ ] Commit changes — use `git-commit` skill
 - [ ] Resolve comments in GitHub — use GitHub MCP

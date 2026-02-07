@@ -36,6 +36,7 @@ cp opencode.json /path/to/your/project/
 | `git-push-remote` | Push with upstream tracking |
 | `git-commit` | Conventional commits with ticket refs |
 | `git-find-ticket-branch` | Find branch by ticket ID |
+| `github-pr-feedback` | Fetch unresolved PR threads and comments |
 | `progress-doc` | Track progress in `docs/progress/` |
 | `learnings` | Manage project learnings in `docs/learnings/` |
 
