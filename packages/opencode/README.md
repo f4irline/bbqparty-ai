@@ -75,6 +75,7 @@ docs/learnings/
 - `/bbq.fire` automatically extracts learnings after implementation
 - `/bbq.learn` manually captures learnings from any conversation
 - `/bbq.pantry`, `/bbq.prep`, `/bbq.fire` read learnings before starting work
+- All `/bbq.*` commands apply `.opencode/HOUSE_RULES.md` when it exists
 
 ## House Rules
 

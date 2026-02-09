@@ -21,6 +21,12 @@ Follow these steps:
 1. Move the ticket to "In Progress" status using Linear MCP
 2. Read the full ticket details from Linear, including research and planning comments
 3. **Check the pantry for learnings**: If `docs/learnings/` exists, scan all files for learnings relevant to this ticket's domain. Keep these in mind during implementation.
+
+**House Rules Gate (always):**
+- Check if `.opencode/HOUSE_RULES.md` exists.
+- If it exists, read it before writing code and treat it as binding for implementation choices, testing, and PR scope.
+- Track any required exception explicitly in progress documentation.
+
 4. Ask clarifying questions if anything is unclear before starting
 5. Use the git-branch-create skill to create a properly named branch
 6. Use the git-push-remote skill to push the empty branch to remote
@@ -31,8 +37,8 @@ Follow these steps:
    a. Use the progress-doc skill to create the progress document (includes Workflow Checklist)
    b. Write or modify unit tests first (TDD approach)
    c. If there are API changes, write integration tests
-   d. Implement the changes according to the plan
-   e. Update progress documentation as you go
+   d. Implement the changes according to the plan and House Rules
+   e. Update progress documentation as you go, including House Rules compliance notes
    f. Use the git-commit skill to commit changes as you go and finish the tasks from progress document
 8. After implementation is complete, the validate-changes plugin will automatically run lint, build, and tests
 9. Use the git-commit skill to commit changes with proper message format
@@ -76,11 +82,13 @@ Ensure all tests pass before proceeding.
     - Final progress log entry summarizing what was accomplished
     - All task checkboxes updated
     - Complete list of files changed
+    - House Rules compliance status and approved exceptions (if any)
     - **Commit this update** using the git-commit skill before proceeding
 16. Use the git-push-remote skill to push all commits to remote
 17. Create a pull request using GitHub MCP with:
     - Clear title referencing the ticket
     - Description summarizing changes
+    - House Rules compliance summary (or approved exception notes)
     - Link to the Linear ticket
 18. Move the ticket to "In Review" status using Linear MCP
 19. **Update the Workflow Checklist**: Mark "Phase 3: Finalize & Push" items as complete

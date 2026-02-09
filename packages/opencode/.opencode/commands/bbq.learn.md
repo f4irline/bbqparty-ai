@@ -12,6 +12,14 @@ None required — uses the current conversation as context.
 
 Load and follow the `learnings` skill for structure and categorization.
 
+### 1.5 Load House Rules Context
+
+Check if `.opencode/HOUSE_RULES.md` exists:
+
+- If it exists, read it before extracting learnings.
+- Prioritize learnings that reinforce house rules, needed exceptions, or candidates for future amendments.
+- If it does not exist, continue normally.
+
 ### 2. Review the Conversation
 
 Look back at this entire conversation and identify learnings:
@@ -21,6 +29,7 @@ Look back at this entire conversation and identify learnings:
 - What workarounds were needed?
 - What patterns were followed or established?
 - What decisions were made and why?
+- Which house rules were reinforced, challenged, or clarified?
 - What would you want to know if you came back to this code?
 
 ### 3. Categorize Each Learning
@@ -58,6 +67,7 @@ Entry format:
 
 The learning content. Be concise but complete.
 Include file paths with line numbers when relevant.
+Mention House Rules impact when relevant.
 
 ---
 ```
@@ -71,6 +81,10 @@ Documented X learnings:
 - gotchas.md: "Title of gotcha"
 - patterns.md: "Title of pattern"
 ...
+
+House Rules notes:
+- Reinforced: [rule or "None"]
+- Exceptions/Amendments to consider: [details or "None"]
 ```
 
 If no learnings were worth documenting, say so — that's fine too.

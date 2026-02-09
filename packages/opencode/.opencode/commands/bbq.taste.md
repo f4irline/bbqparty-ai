@@ -24,12 +24,17 @@ Follow these steps:
    - If it exists, read it and check the Workflow Checklist for current status
    - If not, create one using the progress-doc skill with a review-specific workflow checklist (see below)
 
+**House Rules Gate (always):**
+- Check if `.opencode/HOUSE_RULES.md` exists.
+- If it exists, read it before making review fixes and treat it as binding.
+- If any requested change conflicts with House Rules, call it out and request explicit exception handling.
+
 ## Address Review Comments (Phase 1: Implementation)
 
 5. Use the `github-pr-feedback` skill to fetch unresolved review threads and PR conversation comments for this branch's pull request
 6. For each unresolved review comment/thread:
    a. Understand the feedback
-   b. Make the necessary changes
+   b. Make the necessary changes while preserving House Rules compliance
    c. Create a focused commit addressing that specific comment using the git-commit skill
    d. Resolve that comment in GitHub using GitHub MCP once the change is in place
 7. **Update the Workflow Checklist**: Mark "Phase 1: Implementation" items as complete
@@ -69,6 +74,7 @@ Follow these steps:
 13. Add a summary comment to the PR using GitHub MCP explaining:
     - What changes were made
     - How each comment was addressed
+    - House Rules alignment (and any approved exceptions)
     - Any items that need further discussion
 14. **Update the Workflow Checklist**: Mark "Phase 3: Finalize & Push" items as complete
 

@@ -86,4 +86,6 @@ Principles documented:
 - ...
 
 These rules will guide all development in this project.
+
+All `/bbq.*` commands will load and apply these rules when this file is present.
 ```

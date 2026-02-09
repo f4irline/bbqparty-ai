@@ -8,6 +8,11 @@ Parse the input: `$ARGUMENTS`
 
 You are planning the technical implementation for the ticket. If additional context was provided, factor it into your planning.
 
+Before planning, check if `.opencode/HOUSE_RULES.md` exists:
+- If it exists, read it first and treat it as mandatory constraints.
+- Use it to shape the design, test strategy, and governance notes.
+- If it does not exist, continue with the default planning workflow.
+
 Follow these steps:
 
 1. Read the full ticket details from Linear using Linear MCP
@@ -23,6 +28,7 @@ Follow these steps:
    - API changes (if any)
    - Database/schema changes (if any)
    - Infra changes (if any)
+   - House Rules constraints and any required exception approvals
    - Local development considerations (env vars, services, seeds, scripts)
    - Test strategy (unit tests, integration tests)
    - Potential breaking changes
@@ -65,6 +71,9 @@ Follow these steps:
    ### Breaking Changes
    [List any breaking changes or "None"]
 
+   ### House Rules Alignment
+   [How this plan follows `.opencode/HOUSE_RULES.md`, required exceptions with rationale, or "No HOUSE_RULES file found"]
+
    ### Learnings to Apply
    [Relevant learnings from docs/learnings/ or "None identified"]
    ```
@@ -80,6 +89,7 @@ Follow these steps:
    - Add missing details that were requested
    - Clarify points that were unclear
    - Adjust scope, files, or strategy as directed
+   - Re-check House Rules alignment and update exceptions/approvals if needed
    - Update the "Status" date to reflect the revision
 7. If status is not already "Ready", move it there using Linear MCP
 

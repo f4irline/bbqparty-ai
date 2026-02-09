@@ -8,6 +8,11 @@ Parse the input: `$ARGUMENTS`
 
 You are researching the ticket. If additional context was provided, incorporate it into your research focus.
 
+Before starting research, check if `.opencode/HOUSE_RULES.md` exists:
+- If it exists, read it first and treat it as mandatory constraints for recommendations.
+- Use it to evaluate whether proposed approaches require an explicit exception.
+- If it does not exist, continue with the default workflow.
+
 Follow these steps:
 
 1. Read the full ticket details from Linear using Linear MCP
@@ -17,7 +22,7 @@ Follow these steps:
 
 3. Move the ticket to "In Research" status using Linear MCP
 4. **Check existing learnings**: If `docs/learnings/` exists, scan all files for learnings relevant to this ticket's domain. These may inform your research and save time.
-5. Research the codebase to understand the best approach for implementing this ticket, including how it will work in a local development environment
+5. Research the codebase to understand the best approach for implementing this ticket, including how it will work in a local development environment and how it aligns with House Rules
 6. Ask clarifying questions if you need more information about:
    - Requirements or acceptance criteria
    - Technical constraints or preferences
@@ -42,6 +47,9 @@ Follow these steps:
    ### Dependencies
    [Any dependencies identified]
 
+   ### House Rules Alignment
+   [How the approach follows `.opencode/HOUSE_RULES.md`, any required exceptions, or "No HOUSE_RULES file found"]
+
    ### Local Development Notes
    [Env vars, local services, fixtures/seeds, scripts, or "None"]
 
@@ -60,6 +68,7 @@ Follow these steps:
    - Add missing information that was requested
    - Clarify points that were unclear
    - Remove or adjust rejected approaches
+   - Revalidate alignment with House Rules and update exceptions (if any)
    - Update the "Status" date to reflect the revision
 7. If status is not already "Ready to Plan", move it there using Linear MCP
 
