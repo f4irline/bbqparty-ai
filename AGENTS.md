@@ -1,153 +1,155 @@
-# AGENTS.md — BBQ Party
-
-Guidance for AI coding agents working in this repository.
+# AGENTS.md - BBQ Party
+Guidance for coding agents working in this repository.
+Use this file as the default guide for build/lint/test commands and coding conventions.
 
 ## Project Overview
+BBQ Party is a workflow automation toolkit connecting Linear ticket workflows to GitHub actions through OpenCode.
+Key directories:
+- `packages/opencode/` - portable OpenCode config package (`.opencode/commands`, `.opencode/skills`)
+- `mcp/github-app/` - GitHub App MCP server (TypeScript)
+- `docs/` - planning and project docs
+- `init.sh` - setup/bootstrap script
 
-BBQ Party is a workflow automation toolkit integrating Linear tickets with GitHub via OpenCode.
+## Rule Sources and Precedence
+Read these in order before making changes:
+1. This `AGENTS.md`
+2. User task instructions
+3. `.opencode/HOUSE_RULES.md` in the target project (if present)
 
-## Repository Structure
+Editor-specific rule files checked in this repo:
+- `.cursor/rules/`: not present
+- `.cursorrules`: not present
+- `.github/copilot-instructions.md`: not present
+If any of these files appear later, treat them as additional constraints.
 
-```
-bbqparty/
-├── packages/opencode/           # OpenCode config (copy to target projects)
-│   ├── .opencode/commands/      # Slash commands (/bbq.*)
-│   └── .opencode/skills/        # Reusable procedures (git-*, learnings)
-├── mcp/github-app/              # GitHub App MCP server (TypeScript)
-└── docs/                        # Documentation
-```
-
-## Build/Lint/Test Commands
-
-### GitHub App MCP Server (`mcp/github-app/`)
-
+## Build, Lint, and Test Commands
+### Root (repository)
 ```bash
-pnpm install     # Install dependencies
-pnpm build       # Build TypeScript (tsc)
-pnpm dev         # Development with hot reload (tsx)
-pnpm start       # Run production build
+./init.sh /path/to/target-project
+./init.sh /path/to/target-project --auth-method pat
+./init.sh /path/to/target-project --auth-method app --pem /path/to/key.pem
 ```
 
-Docker build & run:
+### GitHub App MCP server (`mcp/github-app`)
 ```bash
-docker build -t bbqparty/github-app-mcp .
-docker run --rm -i -e GITHUB_APP_ID -e GITHUB_APP_INSTALLATION_ID -e GITHUB_APP_PRIVATE_KEY bbqparty/github-app-mcp
+pnpm install
+pnpm build
+pnpm dev
+pnpm start
 ```
 
-### OpenCode Plugin (`packages/opencode/.opencode/`)
-
+Docker build/run:
 ```bash
-bun install      # Install dependencies
+docker build -t bbqparty/github-app-mcp mcp/github-app
+docker run --rm -i \
+  -e GITHUB_APP_ID \
+  -e GITHUB_APP_INSTALLATION_ID \
+  -e GITHUB_APP_PRIVATE_KEY \
+  bbqparty/github-app-mcp
 ```
 
-### Tests
+### Lint/Test status (current state)
+- No dedicated lint script exists in `mcp/github-app/package.json`.
+- Use `pnpm build` as the required compile-time validation gate.
+- No test framework is currently configured in this repository.
+- If lint is added, prefer ESLint with `pnpm lint`.
+- If tests are added, use Vitest with script: `"test": "vitest run"`.
 
-No test framework configured. If adding tests, use Vitest.
-Single test: `pnpm test -- path/to/file.test.ts`
+Single-test execution (important):
+```bash
+pnpm test -- path/to/file.test.ts
+```
 
 ## Code Style Guidelines
+### Language and compiler
+- TypeScript strict mode is enabled in `mcp/github-app/tsconfig.json`.
+- Compiler baseline:
+  - `target: ES2022`
+  - `module: NodeNext`
+  - `moduleResolution: NodeNext`
 
-### TypeScript
-
-- **Target:** ES2022 | **Module:** NodeNext | **Strict mode:** Enabled
-- **Use `.js` extension** for MCP SDK imports (NodeNext resolution)
-
-```typescript
-// Import order: Node builtins → External packages → Internal
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { Octokit } from "@octokit/rest";
-import * as fs from "fs";
-```
-
-### Type Annotations
-
-```typescript
-let privateKey: string;                    // Explicit types for delayed init
-type: "object" as const,                   // Literal types in schemas
-const { owner, repo } = args as any;       // Dynamic MCP tool arguments
-```
+### Imports
+- Group imports in this order:
+  1. Node built-ins
+  2. External packages
+  3. Internal/local modules
+- In NodeNext contexts, use `.js` extension where required (for example MCP SDK deep imports).
+- Keep imports explicit and stable.
+- Avoid wildcard imports except Node built-ins (for example `import * as fs from "fs"`).
 
 ### Formatting
+- 2-space indentation
+- Double quotes
+- Semicolons
+- Trailing commas in multiline objects/arrays/params
+- Prefer readable wraps over dense one-liners
 
-2 spaces | Double quotes | Semicolons | Trailing commas in multi-line
+### Types and schemas
+- Use explicit types when initialization is delayed (`let privateKey: string;`).
+- Use `as const` for JSON-schema-like literals in MCP tool definitions.
+- Keep `any` at boundaries only (dynamic MCP args).
+- Do not spread `any` through core logic.
+- Prefer narrow, descriptive types for returned payloads.
 
-### Naming Conventions
+### Naming conventions
+- Files: kebab-case (`setup-github-key.sh`)
+- Variables/functions: camelCase (`graphqlWithAuth`)
+- Types/interfaces/classes: PascalCase (`Server`)
+- Constants/env vars: UPPER_SNAKE_CASE (`GITHUB_APP_ID`)
+- MCP tool names: snake_case (`create_pull_request`)
 
-| Type | Convention | Example |
-|------|------------|---------|
-| Files | kebab-case | `validate-changes.ts` |
-| Variables/Functions | camelCase | `privateKey` |
-| Types/Interfaces | PascalCase | `Server` |
-| Constants | UPPER_SNAKE_CASE | `GITHUB_APP_ID` |
-| MCP tool names | snake_case | `create_pull_request` |
+### Error handling and logging
+- Validate critical environment variables at startup and fail fast.
+- Use `console.error` for logs/errors in MCP processes.
+- Do not emit ad-hoc logs to stdout in MCP mode (stdout is protocol transport).
+- Wrap async tool handlers in `try/catch`.
+- Return structured MCP errors:
+  - `content: [{ type: "text", text: "Error: ..." }]`
+  - `isError: true`
+- Return actionable error messages (what is missing, invalid, or failed).
 
-### Error Handling
+### MCP response patterns
+- Define each tool with `name`, `description`, and `inputSchema`.
+- Always specify `required` fields.
+- Return JSON with `JSON.stringify(value, null, 2)` unless plain text is expected.
+- Keep response shapes stable for downstream automation.
 
-```typescript
-// Fail fast on missing config
-if (!GITHUB_APP_ID) {
-  console.error("Error: GITHUB_APP_ID required"); process.exit(1);
-}
-// Wrap async, return error response
-try { await octokit.pulls.create({ ... }); }
-catch (error: any) {
-  return { content: [{ type: "text", text: `Error: ${error.message}` }], isError: true };
-}
+## Git and Workflow Conventions
+Branch naming format: `{type}/{ticket-id}-short-description`
+Allowed types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`
+
+Commit message format:
+```text
+{type}({scope}): {description}
+
+{body}
+
+Refs: {ticket-id}
 ```
+Commit rules:
+- Imperative mood
+- Lowercase first letter
+- No period at end of subject
+- Subject max 72 characters
 
-### MCP Tool Patterns
+## Environment Variables and Security
+Primary environment variables:
+- `BBQ_LINEAR_API_KEY`
+- `BBQ_GITHUB_PAT`
+- `BBQ_GITHUB_APP_ID`
+- `BBQ_GITHUB_APP_INSTALLATION_ID`
+- `BBQ_GITHUB_APP_PRIVATE_KEY`
 
-```typescript
-// Tool definition
-{ name: "tool_name", description: "What it does", inputSchema: {
-    type: "object" as const, properties: { owner: { type: "string" } }, required: ["owner"],
-}}
-// Response (use console.error for logs, stdout is MCP protocol)
-return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
-```
+Security rules:
+- Never commit `.pem`, `.env`, or credential files.
+- Keep secrets in environment variables.
+- Preserve `.gitignore` protection for `*.pem`.
 
-## Git Conventions
-
-### Branch Naming
-
-Format: `{type}/{ticket-id}-short-description`
-Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`
-Example: `feat/STU-15-user-authentication`
-
-### Commit Messages
-
-Format: `{type}({scope}): {description}` + body + `Refs: {ticket-id}`
-Types: feat, fix, refactor, docs, test, chore, perf, style, ci
-Description: Imperative mood, lowercase, no period, max 72 chars
-
-## Environment Variables
-
-| Variable | Description |
-|----------|-------------|
-| `BBQ_LINEAR_API_KEY` | Linear API key |
-| `BBQ_GITHUB_PAT` | GitHub PAT (for PAT auth) |
-| `BBQ_GITHUB_APP_ID` | GitHub App ID (for App auth) |
-| `BBQ_GITHUB_APP_INSTALLATION_ID` | Installation ID |
-| `BBQ_GITHUB_APP_PRIVATE_KEY` | Base64-encoded private key |
-
-## Security Rules
-
-Never commit `.pem` files, `.env`, or `credentials.json`. Use environment variables for secrets.
-
-## OpenCode Commands
-
-| Command | Purpose |
-|---------|---------|
-| `/bbq.ticket <id>` | Check ticket status |
-| `/bbq.pantry <id>` | Research — gather context, check learnings |
-| `/bbq.prep <id>` | Planning — technical design |
-| `/bbq.fire <id>` | Implementation — code, test, PR |
-| `/bbq.taste <id>` | Address review comments |
-| `/bbq.rules` | Set up project house rules |
-| `/bbq.learn` | Extract learnings from session |
-
-## Learnings System
-
-Store insights in `docs/learnings/`: `gotchas.md` (pitfalls), `patterns.md` (conventions), `decisions.md` (architectural choices), `discoveries.md` (how things work).
-
-Check learnings before starting work. Document new insights after implementation.
+## Learnings and Project Memory
+- Store durable insights in `docs/learnings/`:
+  - `gotchas.md`
+  - `patterns.md`
+  - `decisions.md`
+  - `discoveries.md`
+- Check learnings before implementation when the directory exists.
+- Append new high-value learnings after significant work.
