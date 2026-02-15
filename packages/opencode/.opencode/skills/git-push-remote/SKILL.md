@@ -9,35 +9,46 @@ Push the current branch to the remote repository, setting up tracking if needed.
 
 In worktree workflows, run this skill from the ticket's dedicated worktree path.
 
+## Inputs
+
+- `worktree_path` (recommended): absolute path to the ticket worktree
+- `branch` (optional): branch name; if omitted, resolve from the worktree
+
 ## Steps
 
-1. **Get current branch name**:
+1. **Resolve working context**:
+
+   If `worktree_path` is provided, prefer explicit `-C` commands:
    ```bash
-   git branch --show-current
+   git -C "{worktree_path}" rev-parse --show-toplevel
+   git -C "{worktree_path}" branch --show-current
    ```
 
+   If `branch` is not provided, resolve it from the same path.
+
+   If branch resolves to empty (detached HEAD), stop and return an actionable error.
+
 2. **Confirm repository/worktree location**:
-   ```bash
-   git rev-parse --show-toplevel
-   ```
-   Report the path so it is clear which worktree is being pushed.
+   - Always report the resolved top-level path used for push.
 
 3. **Check if upstream is set**:
    ```bash
-   git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null
+   git -C "{worktree_path}" rev-parse --abbrev-ref --symbolic-full-name "@{upstream}" 2>/dev/null
    ```
 
 4. **Push to remote**:
 
    If no upstream is set (new branch):
    ```bash
-   git push -u origin $(git branch --show-current)
+   git -C "{worktree_path}" push -u origin "{branch}"
    ```
 
    If upstream exists:
    ```bash
-   git push
+   git -C "{worktree_path}" push origin "{branch}"
    ```
+
+    Never rely on implicit current directory branch for pushes in multi-worktree workflows.
 
 ## Error Handling
 
@@ -45,8 +56,8 @@ In worktree workflows, run this skill from the ticket's dedicated worktree path.
 
 If push is rejected because remote has new commits:
 ```bash
-git pull --rebase origin $(git branch --show-current)
-git push
+git -C "{worktree_path}" pull --rebase origin "{branch}"
+git -C "{worktree_path}" push origin "{branch}"
 ```
 
 If there are conflicts during rebase:
@@ -69,7 +80,7 @@ If authentication fails:
 
 After pushing, verify the push succeeded:
 ```bash
-git log origin/$(git branch --show-current) -1 --oneline
+git -C "{worktree_path}" log "origin/{branch}" -1 --oneline
 ```
 
 Report the pushed commit hash and message to confirm success.

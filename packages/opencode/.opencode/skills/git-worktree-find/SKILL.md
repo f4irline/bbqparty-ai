@@ -7,6 +7,8 @@ description: Find the worktree path for a branch and create/reuse it when missin
 
 Resolve the worktree path for a ticket branch. If a worktree does not exist yet, create it using `git-worktree-prepare`.
 
+Use shell-safe parsing compatible with bash/zsh and avoid `status` as a variable name.
+
 ## Inputs
 
 - `branch` (required): branch name to locate
@@ -15,18 +17,32 @@ Resolve the worktree path for a ticket branch. If a worktree does not exist yet,
 
 1. Find existing worktree assignment for the branch:
    ```bash
-   git worktree list --porcelain
+   existing_path=""
+   current_path=""
+   while IFS= read -r line; do
+     case "$line" in
+       "worktree "*)
+         current_path="${line#worktree }"
+         ;;
+       "branch refs/heads/"*)
+         current_branch="${line#branch refs/heads/}"
+         if [ "$current_branch" = "$branch" ]; then
+           existing_path="$current_path"
+           break
+         fi
+         ;;
+     esac
+   done < <(git worktree list --porcelain)
    ```
-   Parse entries and locate `branch refs/heads/{branch}`.
 
 2. If found:
    - Return the existing worktree path
-   - Return status `reused`
+   - Return worktree state `reused`
    - Stop
 
 3. If not found:
    - Call `git-worktree-prepare` for the same branch
-   - Return the newly created path and status `created`
+   - Return the newly created path and worktree state `created`
 
 4. Verify branch in resolved worktree:
    ```bash
@@ -40,7 +56,7 @@ Return:
 ```text
 Branch: <branch>
 Worktree: <absolute-path>
-Status: <created|reused>
+Worktree state: <created|reused>
 ```
 
 ## Error Handling

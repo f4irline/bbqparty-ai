@@ -31,22 +31,24 @@ Follow these steps:
 5. Use the `git-branch-create` skill to resolve a properly named ticket branch
 6. Use the `git-worktree-prepare` skill to create or reuse a dedicated worktree for that branch
    - Worktree behavior is **default-on** for `/bbq.fire`
-   - Prefer `BBQ_WORKTREE_ROOT` when set
-   - Otherwise use the default worktree base path defined by `git-worktree-prepare`
+   - Use the worktree base path resolved by `git-worktree-prepare` (sidecar override when present)
+   - Capture outputs as `branch_name` and `worktree_path`
 7. From this point forward, run **all git, code, test, and documentation actions in that worktree path**
-8. Use the `git-push-remote` skill to push the branch to remote from the worktree
+   - Prefer explicit path-aware commands (`git -C "{worktree_path}" ...`) when possible
+   - Do not rely on current working directory after worktree creation
+8. Use the `git-push-remote` skill with explicit inputs `worktree_path` and `branch_name`
 
 ## Fire the Grill (Phase 1: Implementation)
 
 9. Begin implementation:
-   a. Use the progress-doc skill to create the progress document (includes Workflow Checklist)
+   a. Use the progress-doc skill in `worktree_path` to create the progress document (includes Workflow Checklist)
    b. Write or modify unit tests first (TDD approach)
    c. If there are API changes, write integration tests
    d. Implement the changes according to the plan and House Rules
    e. Update progress documentation as you go, including House Rules compliance notes and worktree context
-   f. Use the git-commit skill to commit changes as you go and finish the tasks from progress document
+   f. Use the git-commit skill from `worktree_path` to commit changes as you go and finish the tasks from progress document
 10. After implementation is complete, the validate-changes plugin will automatically run lint, build, and tests
-11. Use the git-commit skill to commit changes with proper message format
+11. Use the git-commit skill from `worktree_path` to commit changes with proper message format
 12. **Update the Workflow Checklist**: Mark "Phase 1: Implementation" items as complete in the progress doc
 
 Ensure all tests pass before proceeding.
@@ -65,7 +67,7 @@ Ensure all tests pass before proceeding.
     - Categorize it (gotcha, pattern, decision, or discovery)
     - Create `docs/learnings/` directory if it doesn't exist
     - Append the learning to the appropriate file with ticket ID and date using the `learnings` skill
-    - **Commit any new learnings** using the git-commit skill
+    - **Commit any new learnings** using the git-commit skill from `worktree_path`
     
 15. Summarize what was documented:
     ```
@@ -89,13 +91,13 @@ Ensure all tests pass before proceeding.
     - Complete list of files changed
     - House Rules compliance status and approved exceptions (if any)
     - Worktree path used for implementation
-    - **Commit this update** using the git-commit skill before proceeding
-18. Use the git-push-remote skill to push all commits to remote
+    - **Commit this update** using the git-commit skill from `worktree_path` before proceeding
+18. Use the git-push-remote skill with explicit `worktree_path` and `branch_name` to push all commits to remote
 19. Create a pull request using GitHub MCP with:
     - Clear title referencing the ticket
     - Description summarizing changes
     - House Rules compliance summary (or approved exception notes)
-    - Worktree context note (path or "default worktree layout")
+    - Worktree context note (path or "resolved worktree layout")
     - Link to the Linear ticket
 20. Move the ticket to "In Review" status using Linear MCP
 21. **Update the Workflow Checklist**: Mark "Phase 3: Finalize & Push" items as complete

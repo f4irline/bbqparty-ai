@@ -7,12 +7,19 @@ description: Create or reuse a dedicated git worktree for a branch using a deter
 
 Create (or reuse) a dedicated worktree for a target branch so multiple agents can work in parallel without branch checkout conflicts.
 
-## Default Path Layout
+## Shell Compatibility
+
+- Commands should work in both bash and zsh.
+- Do not use `status` as a shell variable name (read-only in zsh). Use `worktree_state` instead.
+
+## Path Layout
 
 Worktree root is resolved as:
 
-1. If `BBQ_WORKTREE_ROOT` is set: `"$BBQ_WORKTREE_ROOT/{repo-name}"`
-2. Otherwise: `"{repo-parent}/.bbq-worktrees/{repo-name}"`
+1. If sidecar file `.opencode/worktree-root` exists and has a value:
+   - Use that value as `{worktree-root}`
+2. Otherwise fallback to default sibling layout:
+   - `"{repo-parent}/.bbq-worktrees/{repo-name}"`
 
 Worktree path for a branch:
 
@@ -51,15 +58,57 @@ worktree: /Users/me/projects/.bbq-worktrees/my-repo/feat-STU-15-user-authenticat
 
 3. Check whether this branch is already attached to any worktree:
    ```bash
-   git worktree list --porcelain
+   branch="{branch}"
+   existing_path=""
+   current_path=""
+   while IFS= read -r line; do
+     case "$line" in
+       "worktree "*)
+         current_path="${line#worktree }"
+         ;;
+       "branch refs/heads/"*)
+         current_branch="${line#branch refs/heads/}"
+         if [ "$current_branch" = "$branch" ]; then
+           existing_path="$current_path"
+           break
+         fi
+         ;;
+     esac
+   done < <(git worktree list --porcelain)
    ```
-   If found, return that path with status `reused` and stop.
+   If found, return that path with worktree state `reused` and stop.
 
 4. Build deterministic worktree path:
    - Resolve repo name from repo root basename
-   - Resolve worktree root using `BBQ_WORKTREE_ROOT` or fallback layout
+   - Resolve worktree root:
+     - Prefer project-specific path from `.opencode/worktree-root`
+     - Fallback to default sibling layout when no sidecar path is found
    - Replace `/` with `-` in branch name for directory name
    - Create parent directories as needed
+
+   Example extraction flow:
+   ```bash
+   repo_root="$(git rev-parse --show-toplevel)"
+   repo_name="$(basename "$repo_root")"
+   worktree_root_file="$repo_root/.opencode/worktree-root"
+   configured_root=""
+
+   if [ -f "$worktree_root_file" ]; then
+     read -r configured_root < "$worktree_root_file"
+   fi
+
+   if [ -n "$configured_root" ]; then
+     worktree_root="$configured_root"
+   else
+     worktree_root="$(dirname "$repo_root")/.bbq-worktrees/$repo_name"
+   fi
+   ```
+
+   Example resolution from sidecar:
+   ```text
+   .opencode/worktree-root: /Users/me/worktrees/my-repo
+   worktree-root: /Users/me/worktrees/my-repo
+   ```
 
 5. Add the worktree:
    - If local branch exists:
@@ -72,8 +121,8 @@ worktree: /Users/me/projects/.bbq-worktrees/my-repo/feat-STU-15-user-authenticat
      ```
    - Else create a new branch from remote default branch:
      ```bash
-     git worktree add -b "{branch}" "{worktree-path}" "origin/{default-branch}"
-     ```
+      git worktree add -b "{branch}" "{worktree-path}" "origin/{default-branch}"
+      ```
 
 6. Verify:
    ```bash
@@ -87,7 +136,7 @@ Return:
 ```text
 Branch: <branch>
 Worktree: <absolute-path>
-Status: <created|reused>
+Worktree state: <created|reused>
 Default base: origin/<default-branch>
 ```
 

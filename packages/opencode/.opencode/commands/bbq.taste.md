@@ -19,8 +19,11 @@ Follow these steps:
 
 1. Use the git-find-ticket-branch skill to find the branch for this ticket
 2. Use the `git-worktree-find` skill to locate the existing worktree for that branch
-   - If no worktree exists yet, create one using the default worktree layout
+   - If no worktree exists yet, create one using the layout resolved by `git-worktree-prepare`
+   - Capture outputs as `branch_name` and `worktree_path`
 3. From this point forward, run all git/code actions in the resolved worktree path
+   - Prefer explicit path-aware commands (`git -C "{worktree_path}" ...`) when possible
+   - Do not rely on current working directory after worktree resolution
 4. Pull the latest changes in that worktree and resolve any conflicts (ask for help if conflicts are complex)
 5. **Check for existing progress doc** at `docs/progress/{branch-name}.md` in that worktree
     - If it exists, read it and check the Workflow Checklist for current status
@@ -37,7 +40,7 @@ Follow these steps:
 7. For each unresolved review comment/thread:
    a. Understand the feedback
    b. Make the necessary changes while preserving House Rules compliance
-   c. Create a focused commit addressing that specific comment using the git-commit skill
+   c. Create a focused commit addressing that specific comment using the git-commit skill from `worktree_path`
    d. Resolve that comment in GitHub using GitHub MCP once the change is in place
 8. **Update the Workflow Checklist**: Mark "Phase 1: Implementation" items as complete
 
@@ -55,7 +58,7 @@ Follow these steps:
    - Categorize it (gotcha, pattern, decision, or discovery)
    - Create `docs/learnings/` directory if it doesn't exist
    - Append the learning to the appropriate file with ticket ID and date using the `learnings` skill
-   - **Commit any new learnings** using the git-commit skill
+   - **Commit any new learnings** using the git-commit skill from `worktree_path`
    
 11. Summarize what was documented:
      ```
@@ -72,7 +75,7 @@ Follow these steps:
 
 **IMPORTANT: Only proceed with this section AFTER all changes, documentation, and learnings are complete. Do NOT push until everything else is finished.**
 
-13. Use the git-push-remote skill to push all commits to remote
+13. Use the git-push-remote skill with explicit `worktree_path` and `branch_name` to push all commits to remote
 14. Add a summary comment to the PR using GitHub MCP explaining:
     - What changes were made
     - How each comment was addressed

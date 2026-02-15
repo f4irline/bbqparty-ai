@@ -8,6 +8,7 @@
 # Options:
 #   --auth-method <app|pat>  GitHub authentication method (default: pat)
 #   --pem <path>             Path to GitHub App private key (.pem file) [requires --auth-method app]
+#   --worktree-root <path>   Optional per-project worktree root override
 #   --skip-docker            Skip Docker image build/pull
 #   --skip-env               Skip environment variable setup
 #   --help                   Show this help message
@@ -16,6 +17,7 @@
 #   ./init.sh /path/to/my-project
 #   ./init.sh /path/to/my-project --auth-method pat
 #   ./init.sh /path/to/my-project --auth-method app --pem ~/keys/github-app.pem
+#   ./init.sh /path/to/my-project --worktree-root ../custom-worktrees
 #   ./init.sh . --skip-docker
 
 set -e
@@ -36,6 +38,9 @@ NC='\033[0m' # No Color
 TARGET_PATH=""
 PEM_PATH=""
 AUTH_METHOD=""
+WORKTREE_ROOT=""
+WORKTREE_ROOT_EXPLICIT=false
+WORKTREE_PROJECT_ROOT=""
 SKIP_DOCKER=false
 SKIP_ENV=false
 
@@ -52,6 +57,11 @@ while [[ $# -gt 0 ]]; do
 		;;
 	--pem)
 		PEM_PATH="$2"
+		shift 2
+		;;
+	--worktree-root)
+		WORKTREE_ROOT="$2"
+		WORKTREE_ROOT_EXPLICIT=true
 		shift 2
 		;;
 	--skip-docker)
@@ -72,6 +82,8 @@ while [[ $# -gt 0 ]]; do
 		echo "                           pat = Personal Access Token (official GitHub MCP)"
 		echo "                           app = GitHub Application (custom MCP)"
 		echo "  --pem <path>             Path to GitHub App private key [requires --auth-method app]"
+		echo "  --worktree-root <path>   Optional per-project worktree root override"
+		echo "                           relative paths resolve from target project"
 		echo "  --skip-docker            Skip firing up the grill"
 		echo "  --skip-env               Skip stocking the pantry"
 		echo "  --help                   Show this menu"
@@ -80,6 +92,7 @@ while [[ $# -gt 0 ]]; do
 		echo "  $0 /path/to/my-project"
 		echo "  $0 /path/to/my-project --auth-method pat"
 		echo "  $0 /path/to/my-project --auth-method app --pem ~/keys/github-app.pem"
+		echo "  $0 /path/to/my-project --worktree-root ../custom-worktrees"
 		exit 0
 		;;
 	-*)
@@ -112,6 +125,30 @@ TARGET_PATH="$(cd "$TARGET_PATH" 2>/dev/null && pwd)" || {
 	exit 1
 }
 
+TARGET_PARENT="$(dirname "$TARGET_PATH")"
+TARGET_PROJECT_NAME="$(basename "$TARGET_PATH")"
+
+# Worktree root for this project's BBQ stations
+if [ "$WORKTREE_ROOT_EXPLICIT" = true ]; then
+	if [[ "$WORKTREE_ROOT" == ~* ]]; then
+		WORKTREE_ROOT="${HOME}${WORKTREE_ROOT:1}"
+	fi
+	if [[ "$WORKTREE_ROOT" != /* ]]; then
+		WORKTREE_ROOT="$TARGET_PATH/$WORKTREE_ROOT"
+	fi
+	WORKTREE_ROOT_PARENT="$(dirname "$WORKTREE_ROOT")"
+	WORKTREE_ROOT_BASENAME="$(basename "$WORKTREE_ROOT")"
+	if [ -d "$WORKTREE_ROOT_PARENT" ]; then
+		WORKTREE_ROOT="$(cd "$WORKTREE_ROOT_PARENT" && pwd)/$WORKTREE_ROOT_BASENAME"
+	fi
+	WORKTREE_ROOT="${WORKTREE_ROOT%/}"
+else
+	WORKTREE_ROOT="$TARGET_PARENT/.bbq-worktrees"
+fi
+
+WORKTREE_PROJECT_ROOT="$WORKTREE_ROOT/$TARGET_PROJECT_NAME"
+WORKTREE_PERMISSION_PATH="$WORKTREE_PROJECT_ROOT/**"
+
 echo ""
 echo -e "${ORANGE}  ____  ____   ___    ____   _    ____ _______   __${NC}"
 echo -e "${ORANGE} | __ )| __ ) / _ \  |  _ \ / \  |  _ \_   _\ \ / /${NC}"
@@ -122,6 +159,12 @@ echo ""
 echo -e "${BLUE}        🍖 Opening the Kitchen 🍖${NC}"
 echo ""
 echo -e "  Kitchen location: ${GREEN}$TARGET_PATH${NC}"
+echo -e "  Worktree root:    ${GREEN}$WORKTREE_PROJECT_ROOT${NC}"
+if [ "$WORKTREE_ROOT_EXPLICIT" = true ]; then
+	echo -e "  Worktree mode:    ${CYAN}custom (project-specific override)${NC}"
+else
+	echo -e "  Worktree mode:    ${CYAN}default sibling layout${NC}"
+fi
 echo ""
 
 # Authentication method selection
@@ -282,7 +325,13 @@ else
 	echo -e "  ${GREEN}✓ Menu hung${NC}"
 fi
 
+# Record per-project worktree root for git-worktree-prepare skill
+WORKTREE_ROOT_FILE="$TARGET_PATH/.opencode/worktree-root"
+printf "%s\n" "$WORKTREE_PROJECT_ROOT" >"$WORKTREE_ROOT_FILE"
+echo -e "  ${GREEN}✓ Worktree root recorded (${WORKTREE_ROOT_FILE})${NC}"
+
 # Check if opencode.json already exists
+CONFIG_WRITTEN=false
 if [ -f "$TARGET_PATH/opencode.json" ]; then
 	echo -e "  ${YELLOW}Old config found${NC}"
 	read -p "  Replace? [y/N] " -n 1 -r
@@ -291,11 +340,58 @@ if [ -f "$TARGET_PATH/opencode.json" ]; then
 		echo "  Keeping old config"
 	else
 		cp "$OPENCODE_JSON_TEMPLATE" "$TARGET_PATH/opencode.json"
+		CONFIG_WRITTEN=true
 		echo -e "  ${GREEN}✓ Config updated (${AUTH_METHOD} mode)${NC}"
 	fi
 else
 	cp "$OPENCODE_JSON_TEMPLATE" "$TARGET_PATH/opencode.json"
+	CONFIG_WRITTEN=true
 	echo -e "  ${GREEN}✓ Config installed (${AUTH_METHOD} mode)${NC}"
+fi
+
+if [ "$CONFIG_WRITTEN" = true ]; then
+	if command -v python3 >/dev/null 2>&1; then
+		if python3 - "$TARGET_PATH/opencode.json" "$WORKTREE_PERMISSION_PATH" <<'PY'
+import json
+import sys
+
+config_path = sys.argv[1]
+permission_path = sys.argv[2]
+
+with open(config_path, "r", encoding="utf-8") as f:
+    data = json.load(f)
+
+permission = data.get("permission")
+if not isinstance(permission, dict):
+    permission = {}
+    data["permission"] = permission
+
+external_directory = permission.get("external_directory")
+if not isinstance(external_directory, dict):
+    external_directory = {}
+    permission["external_directory"] = external_directory
+
+external_directory[permission_path] = "allow"
+
+with open(config_path, "w", encoding="utf-8") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+PY
+		then
+			echo -e "  ${GREEN}✓ Worktree permission added: ${WORKTREE_PERMISSION_PATH}${NC}"
+		else
+			echo -e "  ${YELLOW}⚠ Could not auto-configure worktree external_directory permission${NC}"
+			echo "    Add this manually in $TARGET_PATH/opencode.json:"
+			echo "    \"permission\": { \"external_directory\": { \"$WORKTREE_PERMISSION_PATH\": \"allow\" } }"
+		fi
+	else
+		echo -e "  ${YELLOW}⚠ python3 not found; add worktree external_directory permission manually${NC}"
+		echo "    Add this in $TARGET_PATH/opencode.json:"
+		echo "    \"permission\": { \"external_directory\": { \"$WORKTREE_PERMISSION_PATH\": \"allow\" } }"
+	fi
+else
+	echo -e "  ${YELLOW}⚠ Config was not replaced; ensure this permission exists in your current opencode.json:${NC}"
+	echo "    \"permission\": { \"external_directory\": { \"$WORKTREE_PERMISSION_PATH\": \"allow\" } }"
 fi
 
 echo ""
@@ -316,6 +412,13 @@ else
 	echo "    1. source ~/.zshenv"
 	echo "    2. cd $TARGET_PATH && opencode"
 fi
+echo ""
+echo -e "${BLUE}  Worktree sandbox rule:${NC}"
+echo ""
+echo "    external_directory allows: $WORKTREE_PERMISSION_PATH"
+echo ""
+echo "    Worktree location is project-specific by default:"
+echo "    $WORKTREE_PROJECT_ROOT"
 echo ""
 echo -e "${BLUE}  Today's Menu:${NC}"
 echo ""

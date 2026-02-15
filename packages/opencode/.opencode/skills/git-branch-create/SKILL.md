@@ -80,5 +80,5 @@ Return:
 
 ```text
 Branch: <branch-name>
-Status: <new|existing>
+Branch state: <new|existing>
 ```
