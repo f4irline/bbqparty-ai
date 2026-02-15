@@ -140,6 +140,8 @@ The simplest setup. Uses [GitHub's official MCP server](https://github.com/githu
 ```bash
 export BBQ_LINEAR_API_KEY="lin_api_xxxxx"
 export BBQ_GITHUB_PAT="github_pat_xxxxx"
+# Optional: custom base directory for ticket worktrees
+export BBQ_WORKTREE_ROOT="/path/to/worktrees"
 ```
 
 > **Tip:** Consider creating a dedicated GitHub account as a "service account" for cleaner audit trails. The AI's actions will appear as that account.
@@ -167,6 +169,8 @@ export BBQ_LINEAR_API_KEY="lin_api_xxxxx"
 export BBQ_GITHUB_APP_ID="123456"
 export BBQ_GITHUB_APP_INSTALLATION_ID="12345678"
 export BBQ_GITHUB_APP_PRIVATE_KEY="<base64-encoded-key>"
+# Optional: custom base directory for ticket worktrees
+export BBQ_WORKTREE_ROOT="/path/to/worktrees"
 ```
 
 See [mcp/github-app/README.md](mcp/github-app/README.md) for detailed GitHub App setup.
@@ -185,6 +189,7 @@ See [mcp/github-app/README.md](mcp/github-app/README.md) for detailed GitHub App
    ```bash
    export BBQ_LINEAR_API_KEY="lin_api_xxxxx"
    export BBQ_GITHUB_PAT="github_pat_xxxxx"
+   export BBQ_WORKTREE_ROOT="/path/to/worktrees"  # optional
    ```
 3. Pull the official GitHub MCP:
    ```bash
@@ -207,6 +212,7 @@ See [mcp/github-app/README.md](mcp/github-app/README.md) for detailed GitHub App
    export BBQ_GITHUB_APP_ID="123456"
    export BBQ_GITHUB_APP_INSTALLATION_ID="12345678"
    export BBQ_GITHUB_APP_PRIVATE_KEY="<base64-encoded-key>"
+   export BBQ_WORKTREE_ROOT="/path/to/worktrees"  # optional
    ```
 5. Build the custom MCP:
    ```bash
@@ -262,6 +268,16 @@ Orders flow through the kitchen like this:
 Backlog → In Research → Ready to Plan → Planning → Ready → In Progress → In Review → Done
                                                                                       🍽️
 ```
+
+## Parallel Stations (Worktrees)
+
+Run multiple tickets at once without branch checkout collisions:
+
+- `/bbq.fire` and `/bbq.taste` use a dedicated git worktree per ticket branch by default
+- Existing branch worktrees are reused so follow-up work stays in the same station
+- Set `BBQ_WORKTREE_ROOT` to choose where worktrees live
+- If unset, BBQ Party uses a sibling layout like `../.bbq-worktrees/{repo-name}/{branch-slug}`
+- Clean up stale worktrees with `git worktree remove <path>` and `git worktree prune`
 
 ---
 

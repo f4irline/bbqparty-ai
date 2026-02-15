@@ -32,7 +32,9 @@ cp opencode.json /path/to/your/project/
 
 | Skill | What It Does |
 |-------|--------------|
-| `git-branch-create` | Create branch: `{type}/{ticket}-{description}` |
+| `git-branch-create` | Resolve branch: `{type}/{ticket}-{description}` |
+| `git-worktree-prepare` | Create/reuse dedicated branch worktree |
+| `git-worktree-find` | Resolve branch worktree path for continued work |
 | `git-push-remote` | Push with upstream tracking |
 | `git-commit` | Conventional commits with ticket refs |
 | `git-find-ticket-branch` | Find branch by ticket ID |
@@ -76,6 +78,14 @@ docs/learnings/
 - `/bbq.learn` manually captures learnings from any conversation
 - `/bbq.pantry`, `/bbq.prep`, `/bbq.fire` read learnings before starting work
 - All `/bbq.*` commands apply `.opencode/HOUSE_RULES.md` when it exists
+
+## Parallel Worktrees (Default)
+
+- `/bbq.fire` and `/bbq.taste` default to a dedicated worktree per ticket branch
+- This enables multiple agents to implement/review different tickets in parallel without branch checkout conflicts
+- Optional override: set `BBQ_WORKTREE_ROOT` to control where worktrees are created
+- Default when unset: sibling directory layout `../.bbq-worktrees/{repo-name}/{branch-slug}`
+- Cleanup: remove old stations with `git worktree remove <path>` and `git worktree prune`
 
 ## House Rules
 

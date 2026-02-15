@@ -1,11 +1,13 @@
 ---
 name: git-branch-create
-description: Create a properly named git branch from a Linear ticket ID following the convention {type}/{ticket-id}-short-description
+description: Resolve a properly named git branch from a Linear ticket ID following the convention {type}/{ticket-id}-short-description
 ---
 
 # Git Branch Create
 
-Create a new git branch following the project's naming convention.
+Resolve a ticket branch name following the project's naming convention.
+
+In parallel workflows, branch creation should happen through a dedicated worktree (via `git-worktree-prepare`), not by checking out directly in the current tree.
 
 ## Branch Format
 
@@ -41,10 +43,18 @@ Create a new git branch following the project's naming convention.
    - No special characters
    - Max 30 characters
 
-4. **Create the branch**:
-   ```bash
-   git checkout -b {type}/{ticket-id}-{short-description}
+4. **Construct branch name**:
+   ```text
+   {type}/{ticket-id}-{short-description}
    ```
+
+5. **Do not check out in the current tree**:
+   - Do not run `git checkout -b` in the active workspace
+   - Return the constructed branch name to the caller
+
+6. **Handoff to worktree flow**:
+   - The caller should run `git-worktree-prepare` with the constructed branch name
+   - Let that skill create/reuse the actual branch checkout
 
 ## Examples
 
@@ -56,11 +66,19 @@ Create a new git branch following the project's naming convention.
 
 ## Validation
 
-Before creating the branch:
-1. Ensure you're on the main/master branch
-2. Pull latest changes: `git pull origin main`
-3. Check the branch doesn't already exist: `git branch -a | grep {ticket-id}`
+Before returning the branch name:
+1. Fetch latest refs: `git fetch --all --prune`
+2. Check branch candidates: `git branch -a | grep {ticket-id}`
 
 If a branch for this ticket already exists, inform the user and ask whether to:
-- Check out the existing branch
+- Reuse the existing branch name
 - Create a new branch with a different suffix
+
+## Output
+
+Return:
+
+```text
+Branch: <branch-name>
+Status: <new|existing>
+```

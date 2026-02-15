@@ -7,6 +7,8 @@ description: Push the current branch to the remote repository with upstream trac
 
 Push the current branch to the remote repository, setting up tracking if needed.
 
+In worktree workflows, run this skill from the ticket's dedicated worktree path.
+
 ## Steps
 
 1. **Get current branch name**:
@@ -14,12 +16,18 @@ Push the current branch to the remote repository, setting up tracking if needed.
    git branch --show-current
    ```
 
-2. **Check if upstream is set**:
+2. **Confirm repository/worktree location**:
+   ```bash
+   git rev-parse --show-toplevel
+   ```
+   Report the path so it is clear which worktree is being pushed.
+
+3. **Check if upstream is set**:
    ```bash
    git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null
    ```
 
-3. **Push to remote**:
+4. **Push to remote**:
 
    If no upstream is set (new branch):
    ```bash
@@ -65,3 +73,5 @@ git log origin/$(git branch --show-current) -1 --oneline
 ```
 
 Report the pushed commit hash and message to confirm success.
+
+Also report the worktree path used for the push.

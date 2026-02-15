@@ -16,6 +16,7 @@ docs/progress/{branch-name}.md
 Example: `docs/progress/feat-STU-15-user-authentication.md`
 
 Note: Replace `/` in branch names with `-` for the filename.
+Note: Keep this file in the branch's dedicated worktree checkout.
 
 ## Document Structure
 
@@ -23,6 +24,7 @@ Note: Replace `/` in branch names with `-` for the filename.
 # {Ticket ID}: {Ticket Title}
 
 **Branch:** `{branch-name}`
+**Worktree:** `{absolute-worktree-path}`
 **Status:** {In Progress | Blocked | Complete}
 **Started:** {YYYY-MM-DD}
 **Last Updated:** {YYYY-MM-DD HH:MM}
@@ -104,7 +106,12 @@ Note: Replace `/` in branch names with `-` for the filename.
    git branch --show-current
    ```
 
-3. **Create the file** with the initial template filled in
+3. **Get worktree path**:
+   ```bash
+   git rev-parse --show-toplevel
+   ```
+
+4. **Create the file** with the initial template filled in
 
 ### Updating Progress Doc
 
@@ -116,6 +123,7 @@ Note: Replace `/` in branch names with `-` for the filename.
    - Task checkboxes
    - Files Changed list
    - Technical Notes as needed
+   - Worktree path if missing
 
 ## When to Update
 
@@ -132,6 +140,7 @@ Update the progress document:
 # STU-15: Add User Authentication
 
 **Branch:** `feat/STU-15-user-authentication`
+**Worktree:** `/Users/me/projects/.bbq-worktrees/my-repo/feat-STU-15-user-authentication`
 **Status:** In Progress
 **Started:** 2024-01-15
 **Last Updated:** 2024-01-15 14:30
