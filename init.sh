@@ -148,6 +148,7 @@ fi
 
 WORKTREE_PROJECT_ROOT="$WORKTREE_ROOT/$TARGET_PROJECT_NAME"
 WORKTREE_PERMISSION_PATH="$WORKTREE_PROJECT_ROOT/**"
+SOURCE_PERMISSION_PATH="$TARGET_PATH/**"
 
 echo ""
 echo -e "${ORANGE}  ____  ____   ___    ____   _    ____ _______   __${NC}"
@@ -369,12 +370,13 @@ fi
 
 if [ "$CONFIG_WRITTEN" = true ]; then
 	if command -v python3 >/dev/null 2>&1; then
-		if python3 - "$TARGET_PATH/opencode.json" "$WORKTREE_PERMISSION_PATH" <<'PY'
+		if python3 - "$TARGET_PATH/opencode.json" "$WORKTREE_PERMISSION_PATH" "$SOURCE_PERMISSION_PATH" <<'PY'
 import json
 import sys
 
 config_path = sys.argv[1]
-permission_path = sys.argv[2]
+worktree_permission_path = sys.argv[2]
+source_permission_path = sys.argv[3]
 
 with open(config_path, "r", encoding="utf-8") as f:
     data = json.load(f)
@@ -389,27 +391,30 @@ if not isinstance(external_directory, dict):
     external_directory = {}
     permission["external_directory"] = external_directory
 
-external_directory[permission_path] = "allow"
+external_directory[worktree_permission_path] = "allow"
+external_directory[source_permission_path] = "allow"
 
 with open(config_path, "w", encoding="utf-8") as f:
     json.dump(data, f, indent=2)
     f.write("\n")
 PY
 		then
-			echo -e "  ${GREEN}✓ Worktree permission added: ${WORKTREE_PERMISSION_PATH}${NC}"
+			echo -e "  ${GREEN}✓ External directory permissions added:${NC}"
+			echo "    - $WORKTREE_PERMISSION_PATH"
+			echo "    - $SOURCE_PERMISSION_PATH"
 		else
-			echo -e "  ${YELLOW}⚠ Could not auto-configure worktree external_directory permission${NC}"
+			echo -e "  ${YELLOW}⚠ Could not auto-configure external_directory permissions${NC}"
 			echo "    Add this manually in $TARGET_PATH/opencode.json:"
-			echo "    \"permission\": { \"external_directory\": { \"$WORKTREE_PERMISSION_PATH\": \"allow\" } }"
+			echo "    \"permission\": { \"external_directory\": { \"$WORKTREE_PERMISSION_PATH\": \"allow\", \"$SOURCE_PERMISSION_PATH\": \"allow\" } }"
 		fi
 	else
-		echo -e "  ${YELLOW}⚠ python3 not found; add worktree external_directory permission manually${NC}"
+		echo -e "  ${YELLOW}⚠ python3 not found; add external_directory permissions manually${NC}"
 		echo "    Add this in $TARGET_PATH/opencode.json:"
-		echo "    \"permission\": { \"external_directory\": { \"$WORKTREE_PERMISSION_PATH\": \"allow\" } }"
+		echo "    \"permission\": { \"external_directory\": { \"$WORKTREE_PERMISSION_PATH\": \"allow\", \"$SOURCE_PERMISSION_PATH\": \"allow\" } }"
 	fi
 else
 	echo -e "  ${YELLOW}⚠ Config was not replaced; ensure this permission exists in your current opencode.json:${NC}"
-	echo "    \"permission\": { \"external_directory\": { \"$WORKTREE_PERMISSION_PATH\": \"allow\" } }"
+	echo "    \"permission\": { \"external_directory\": { \"$WORKTREE_PERMISSION_PATH\": \"allow\", \"$SOURCE_PERMISSION_PATH\": \"allow\" } }"
 fi
 
 echo ""
@@ -431,9 +436,11 @@ else
 	echo "    2. cd $TARGET_PATH && opencode"
 fi
 echo ""
-echo -e "${BLUE}  Worktree sandbox rule:${NC}"
+echo -e "${BLUE}  Worktree sandbox rules:${NC}"
 echo ""
-echo "    external_directory allows: $WORKTREE_PERMISSION_PATH"
+echo "    external_directory allows:"
+echo "    - $WORKTREE_PERMISSION_PATH"
+echo "    - $SOURCE_PERMISSION_PATH"
 echo ""
 echo "    Worktree location is project-specific by default:"
 echo "    $WORKTREE_PROJECT_ROOT"

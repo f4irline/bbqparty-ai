@@ -90,6 +90,7 @@ docs/learnings/
 - Optional per-project override via init: `--worktree-root <path>`
 - Runtime lookup comes from `.opencode/worktree-root`
 - Local-only file sync list lives in `.opencode/worktree-local-files`
+- `init.sh` writes external-directory permissions for worktree paths and the source repo path
 - Cleanup: remove old stations with `git worktree remove <path>` and `git worktree prune`
 
 ## House Rules
