@@ -20,6 +20,7 @@ Follow these steps:
 1. Use the git-find-ticket-branch skill to find the branch for this ticket
 2. Use the `git-worktree-find` skill to locate the existing worktree for that branch
    - If no worktree exists yet, create one using the layout resolved by `git-worktree-prepare`
+   - New worktrees mirror local-only files from `.opencode/worktree-local-files`
    - Capture outputs as `branch_name` and `worktree_path`
 3. From this point forward, run all git/code actions in the resolved worktree path
    - Prefer explicit path-aware commands (`git -C "{worktree_path}" ...`) when possible

@@ -42,6 +42,7 @@ Use shell-safe parsing compatible with bash/zsh and avoid `status` as a variable
 
 3. If not found:
    - Call `git-worktree-prepare` for the same branch
+   - This also applies local-file sync from `.opencode/worktree-local-files`
    - Return the newly created path and worktree state `created`
 
 4. Verify branch in resolved worktree:

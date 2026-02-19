@@ -1,0 +1,8 @@
+# Repo-relative local-only files or directories to mirror into ticket worktrees.
+# One path per line. Blank lines and lines beginning with # are ignored.
+#
+# Default entries cover common environment files.
+.env
+.env.local
+.env.development
+.env.test

@@ -129,6 +129,45 @@ worktree: /Users/me/projects/.bbq-worktrees/my-repo/feat-STU-15-user-authenticat
    git -C "{worktree-path}" branch --show-current
    ```
 
+7. Sync local-only files/directories from the source checkout:
+   - Read allowlist from `"{repo-root}/.opencode/worktree-local-files"`
+   - For each listed path:
+     - If source exists and target is missing, mirror it into the worktree
+     - Prefer symlink (`ln -s`) so updates in source are reflected everywhere
+     - Fallback to copy (`cp -R`) if symlink is not possible
+   - Never overwrite existing files in the worktree
+
+   ```bash
+   source_root="$(git rev-parse --show-toplevel)"
+   worktree_path="{worktree-path}"
+   sync_list="$source_root/.opencode/worktree-local-files"
+   linked_count=0
+   copied_count=0
+
+   if [ -f "$sync_list" ]; then
+     while IFS= read -r rel || [ -n "$rel" ]; do
+       case "$rel" in
+         ""|\#*) continue ;;
+       esac
+
+       src="$source_root/$rel"
+       dst="$worktree_path/$rel"
+
+       if [ ! -e "$src" ] || [ -e "$dst" ]; then
+         continue
+       fi
+
+       mkdir -p "$(dirname "$dst")"
+       if ln -s "$src" "$dst" 2>/dev/null; then
+         linked_count=$((linked_count + 1))
+       else
+         cp -R "$src" "$dst"
+         copied_count=$((copied_count + 1))
+       fi
+     done < "$sync_list"
+   fi
+   ```
+
 ## Output
 
 Return:
@@ -138,9 +177,12 @@ Branch: <branch>
 Worktree: <absolute-path>
 Worktree state: <created|reused>
 Default base: origin/<default-branch>
+Local files linked: <count>
+Local files copied: <count>
 ```
 
 ## Notes
 
 - Do not use `git checkout -b` in the current working tree when parallel work is expected.
 - Reusing an existing branch worktree is preferred over creating duplicates.
+- Keep `.opencode/worktree-local-files` limited to local-only files (for example `.env*`).

@@ -98,7 +98,7 @@ This will:
 2. 🔥 Fire up the grill (pull/build Docker image)
 3. 🧂 Stock the pantry (configure credentials)  
 4. 📋 Hang the menu (copy OpenCode config)
-5. 🧭 Record `.opencode/worktree-root` and add a project-specific `external_directory` permission
+5. 🧭 Record `.opencode/worktree-root` and `.opencode/worktree-local-files`, then add a project-specific `external_directory` permission
 
 ### Authentication Options
 
@@ -278,6 +278,7 @@ Run multiple tickets at once without branch checkout collisions:
 - Clean up stale worktrees with `git worktree remove <path>` and `git worktree prune`
 - `init.sh` writes a project-specific `permission.external_directory` rule into `opencode.json`
 - `init.sh` stores the resolved root in `.opencode/worktree-root` for runtime lookup
+- Local-only files (for example `.env`) are mirrored using `.opencode/worktree-local-files`
 
 ---
 

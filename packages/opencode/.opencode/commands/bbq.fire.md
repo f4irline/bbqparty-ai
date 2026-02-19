@@ -32,6 +32,7 @@ Follow these steps:
 6. Use the `git-worktree-prepare` skill to create or reuse a dedicated worktree for that branch
    - Worktree behavior is **default-on** for `/bbq.fire`
    - Use the worktree base path resolved by `git-worktree-prepare` (sidecar override when present)
+   - Local-only files are mirrored from `.opencode/worktree-local-files`
    - Capture outputs as `branch_name` and `worktree_path`
 7. From this point forward, run **all git, code, test, and documentation actions in that worktree path**
    - Prefer explicit path-aware commands (`git -C "{worktree_path}" ...`) when possible

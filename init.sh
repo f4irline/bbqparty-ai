@@ -325,6 +325,24 @@ else
 	echo -e "  ${GREEN}✓ Menu hung${NC}"
 fi
 
+# Ensure worktree local-file sync list exists
+WORKTREE_LOCAL_FILES_FILE="$TARGET_PATH/.opencode/worktree-local-files"
+if [ ! -f "$WORKTREE_LOCAL_FILES_FILE" ]; then
+	cat >"$WORKTREE_LOCAL_FILES_FILE" <<'EOF'
+# Repo-relative local-only files or directories to mirror into ticket worktrees.
+# One path per line. Blank lines and lines beginning with # are ignored.
+#
+# Default entries cover common environment files.
+.env
+.env.local
+.env.development
+.env.test
+EOF
+	echo -e "  ${GREEN}✓ Worktree local file list created (${WORKTREE_LOCAL_FILES_FILE})${NC}"
+else
+	echo "  Worktree local file list kept (${WORKTREE_LOCAL_FILES_FILE})"
+fi
+
 # Record per-project worktree root for git-worktree-prepare skill
 WORKTREE_ROOT_FILE="$TARGET_PATH/.opencode/worktree-root"
 printf "%s\n" "$WORKTREE_PROJECT_ROOT" >"$WORKTREE_ROOT_FILE"
