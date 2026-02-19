@@ -186,3 +186,4 @@ Local files copied: <count>
 - Do not use `git checkout -b` in the current working tree when parallel work is expected.
 - Reusing an existing branch worktree is preferred over creating duplicates.
 - Keep `.opencode/worktree-local-files` limited to local-only files (for example `.env*`).
+- `init.sh` auto-discovers common `.env*` files and appends exact repo-relative paths to this list.

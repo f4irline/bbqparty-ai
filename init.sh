@@ -333,15 +333,62 @@ if [ ! -f "$WORKTREE_LOCAL_FILES_FILE" ]; then
 # Repo-relative local-only files or directories to mirror into ticket worktrees.
 # One path per line. Blank lines and lines beginning with # are ignored.
 #
-# Default entries cover common environment files.
-.env
-.env.local
-.env.development
-.env.test
+# `init.sh` auto-discovers common .env files and appends exact repo-relative paths.
+# Add additional paths manually when needed.
 EOF
 	echo -e "  ${GREEN}✓ Worktree local file list created (${WORKTREE_LOCAL_FILES_FILE})${NC}"
 else
 	echo "  Worktree local file list kept (${WORKTREE_LOCAL_FILES_FILE})"
+fi
+
+# Remove legacy placeholder env lines when root files do not exist.
+for legacy_env in .env .env.local .env.development .env.test; do
+	if [ ! -e "$TARGET_PATH/$legacy_env" ]; then
+		tmp_file="$WORKTREE_LOCAL_FILES_FILE.tmp"
+		: >"$tmp_file"
+		while IFS= read -r existing_line || [ -n "$existing_line" ]; do
+			if [ "$existing_line" != "$legacy_env" ]; then
+				printf "%s\n" "$existing_line" >>"$tmp_file"
+			fi
+		done <"$WORKTREE_LOCAL_FILES_FILE"
+		mv "$tmp_file" "$WORKTREE_LOCAL_FILES_FILE"
+	fi
+done
+
+# Auto-discover common environment files and add exact repo-relative paths
+DISCOVERED_ENV_PATHS="$(
+	find "$TARGET_PATH" \
+		\( -path "$TARGET_PATH/.git" -o -path "$TARGET_PATH/.opencode" -o -path "$TARGET_PATH/node_modules" -o -path "$TARGET_PATH/.bbq-worktrees" \) -prune -o \
+		-type f \( -name ".env" -o -name ".env.local" -o -name ".env.development" -o -name ".env.test" \) -print | LC_ALL=C sort
+)"
+
+DISCOVERED_ENV_COUNT=0
+ADDED_ENV_COUNT=0
+
+if [ -n "$DISCOVERED_ENV_PATHS" ]; then
+	while IFS= read -r env_abs_path; do
+		if [ -z "$env_abs_path" ]; then
+			continue
+		fi
+
+		env_rel_path="${env_abs_path#"$TARGET_PATH"/}"
+		if [ "$env_rel_path" = "$env_abs_path" ]; then
+			continue
+		fi
+
+		DISCOVERED_ENV_COUNT=$((DISCOVERED_ENV_COUNT + 1))
+
+		if ! grep -Fqx "$env_rel_path" "$WORKTREE_LOCAL_FILES_FILE"; then
+			printf "%s\n" "$env_rel_path" >>"$WORKTREE_LOCAL_FILES_FILE"
+			ADDED_ENV_COUNT=$((ADDED_ENV_COUNT + 1))
+		fi
+	done <<< "$DISCOVERED_ENV_PATHS"
+fi
+
+if [ "$DISCOVERED_ENV_COUNT" -gt 0 ]; then
+	echo "  Env files discovered: $DISCOVERED_ENV_COUNT (added $ADDED_ENV_COUNT exact path mapping(s))"
+else
+	echo "  Env files discovered: 0 (using existing mappings)"
 fi
 
 # Record per-project worktree root for git-worktree-prepare skill

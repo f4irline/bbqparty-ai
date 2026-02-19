@@ -279,6 +279,7 @@ Run multiple tickets at once without branch checkout collisions:
 - `init.sh` writes project-specific `permission.external_directory` rules for both worktree paths and the original repo path
 - `init.sh` stores the resolved root in `.opencode/worktree-root` for runtime lookup
 - Local-only files (for example `.env`) are mirrored using `.opencode/worktree-local-files`
+- `init.sh` auto-discovers `.env`, `.env.local`, `.env.development`, and `.env.test` paths and maps them by exact repo-relative location
 
 ---
 
