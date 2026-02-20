@@ -31,7 +31,7 @@ Follow these steps:
 5. Use the `git-branch-create` skill to resolve a properly named ticket branch
 6. Use the `git-worktree-prepare` skill to create or reuse a dedicated worktree for that branch
    - Worktree behavior is **default-on** for `/bbq.fire`
-   - Use the worktree base path resolved by `git-worktree-prepare` (sidecar override when present)
+   - Worktrees are created under `.opencode/.bbq-worktrees/` in the project root
    - Local-only files are mirrored from `.opencode/worktree-local-files`
    - Capture outputs as `branch_name` and `worktree_path`
 7. From this point forward, run **all git, code, test, and documentation actions in that worktree path**

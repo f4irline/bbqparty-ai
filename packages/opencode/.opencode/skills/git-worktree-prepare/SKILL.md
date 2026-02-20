@@ -14,17 +14,16 @@ Create (or reuse) a dedicated worktree for a target branch so multiple agents ca
 
 ## Path Layout
 
-Worktree root is resolved as:
+Worktree root is always:
 
-1. If sidecar file `.opencode/worktree-root` exists and has a value:
-   - Use that value as `{worktree-root}`
-2. Otherwise fallback to default sibling layout:
-   - `"{repo-parent}/.bbq-worktrees/{repo-name}"`
+```
+{repo-root}/.opencode/.bbq-worktrees
+```
 
 Worktree path for a branch:
 
 ```
-{worktree-root}/{branch-name-with-slashes-replaced-by-dashes}
+{repo-root}/.opencode/.bbq-worktrees/{branch-name-with-slashes-replaced-by-dashes}
 ```
 
 Example:
@@ -32,7 +31,7 @@ Example:
 ```
 repo root: /Users/me/projects/my-repo
 branch: feat/STU-15-user-authentication
-worktree: /Users/me/projects/.bbq-worktrees/my-repo/feat-STU-15-user-authentication
+worktree: /Users/me/projects/my-repo/.opencode/.bbq-worktrees/feat-STU-15-user-authentication
 ```
 
 ## Inputs
@@ -79,35 +78,17 @@ worktree: /Users/me/projects/.bbq-worktrees/my-repo/feat-STU-15-user-authenticat
    If found, return that path with worktree state `reused` and stop.
 
 4. Build deterministic worktree path:
-   - Resolve repo name from repo root basename
-   - Resolve worktree root:
-     - Prefer project-specific path from `.opencode/worktree-root`
-     - Fallback to default sibling layout when no sidecar path is found
+   - Resolve `repo_root` from `git rev-parse --show-toplevel`
+   - Set `worktree_root="$repo_root/.opencode/.bbq-worktrees"`
    - Replace `/` with `-` in branch name for directory name
    - Create parent directories as needed
 
    Example extraction flow:
    ```bash
    repo_root="$(git rev-parse --show-toplevel)"
-   repo_name="$(basename "$repo_root")"
-   worktree_root_file="$repo_root/.opencode/worktree-root"
-   configured_root=""
-
-   if [ -f "$worktree_root_file" ]; then
-     read -r configured_root < "$worktree_root_file"
-   fi
-
-   if [ -n "$configured_root" ]; then
-     worktree_root="$configured_root"
-   else
-     worktree_root="$(dirname "$repo_root")/.bbq-worktrees/$repo_name"
-   fi
-   ```
-
-   Example resolution from sidecar:
-   ```text
-   .opencode/worktree-root: /Users/me/worktrees/my-repo
-   worktree-root: /Users/me/worktrees/my-repo
+   worktree_root="$repo_root/.opencode/.bbq-worktrees"
+   branch_slug="${branch//\//-}"
+   worktree_path="$worktree_root/$branch_slug"
    ```
 
 5. Add the worktree:

@@ -8,9 +8,6 @@ This is the portable OpenCode configuration for BBQ Party. Drop it into any proj
 ```bash
 # From bbqparty root
 ./init.sh /path/to/your/project --pem /path/to/key.pem
-
-# Optional: custom worktree base for this project only
-./init.sh /path/to/your/project --worktree-root ../custom-worktrees
 ```
 
 **Option B: Manual copy**
@@ -86,12 +83,10 @@ docs/learnings/
 
 - `/bbq.fire` and `/bbq.taste` default to a dedicated worktree per ticket branch
 - This enables multiple agents to implement/review different tickets in parallel without branch checkout conflicts
-- Worktrees use sibling directory layout `../.bbq-worktrees/{repo-name}/{branch-slug}`
-- Optional per-project override via init: `--worktree-root <path>`
-- Runtime lookup comes from `.opencode/worktree-root`
+- Worktrees use project-local directory layout `.opencode/.bbq-worktrees/{branch-slug}`
+- `.opencode/.bbq-worktrees/` is ignored by default via `.opencode/.gitignore`
 - Local-only file sync list lives in `.opencode/worktree-local-files`
 - `init.sh` auto-discovers common `.env*` files and appends exact repo-relative mappings
-- `init.sh` writes external-directory permissions for worktree paths and the source repo path
 - Cleanup: remove old stations with `git worktree remove <path>` and `git worktree prune`
 
 ## House Rules

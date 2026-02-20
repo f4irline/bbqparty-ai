@@ -140,7 +140,7 @@ Update the progress document:
 # STU-15: Add User Authentication
 
 **Branch:** `feat/STU-15-user-authentication`
-**Worktree:** `/Users/me/projects/.bbq-worktrees/my-repo/feat-STU-15-user-authentication`
+**Worktree:** `/Users/me/projects/my-repo/.opencode/.bbq-worktrees/feat-STU-15-user-authentication`
 **Status:** In Progress
 **Started:** 2024-01-15
 **Last Updated:** 2024-01-15 14:30

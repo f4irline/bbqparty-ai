@@ -89,6 +89,6 @@ For ticket `STU-15`:
 ```
 Found branch: feat/STU-15-user-authentication
   - Exists: locally and on origin
-  - Worktree: /Users/me/projects/.bbq-worktrees/my-repo/feat-STU-15-user-authentication
+  - Worktree: /Users/me/projects/my-repo/.opencode/.bbq-worktrees/feat-STU-15-user-authentication
   - Last commit: abc1234 feat(api): add login endpoint (2 hours ago)
 ```

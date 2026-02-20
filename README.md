@@ -81,9 +81,6 @@ bbqparty/
 ```bash
 # Fire up a new kitchen (interactive mode)
 ./init.sh /path/to/your/project
-
-# Optional: set a custom worktree base for this project only
-./init.sh /path/to/your/project --worktree-root ../custom-worktrees
 ```
 
 The init script will ask you to choose an authentication method:
@@ -98,7 +95,8 @@ This will:
 2. 🔥 Fire up the grill (pull/build Docker image)
 3. 🧂 Stock the pantry (configure credentials)  
 4. 📋 Hang the menu (copy OpenCode config)
-5. 🧭 Record `.opencode/worktree-root` and `.opencode/worktree-local-files`, then add project-specific `external_directory` permissions
+5. 🧭 Prepare project-local worktree root in `.opencode/.bbq-worktrees/`
+6. 🥣 Ensure `.opencode/worktree-local-files` exists and auto-map common `.env*` files
 
 ### Authentication Options
 
@@ -273,11 +271,9 @@ Run multiple tickets at once without branch checkout collisions:
 
 - `/bbq.fire` and `/bbq.taste` use a dedicated git worktree per ticket branch by default
 - Existing branch worktrees are reused so follow-up work stays in the same station
-- BBQ Party uses a sibling layout like `../.bbq-worktrees/{repo-name}/{branch-slug}`
-- Optional per-project override: `./init.sh <project> --worktree-root <path>`
+- BBQ Party uses a project-local layout: `.opencode/.bbq-worktrees/{branch-slug}`
+- `.opencode/.bbq-worktrees/` is ignored by default via `.opencode/.gitignore`
 - Clean up stale worktrees with `git worktree remove <path>` and `git worktree prune`
-- `init.sh` writes project-specific `permission.external_directory` rules for both worktree paths and the original repo path
-- `init.sh` stores the resolved root in `.opencode/worktree-root` for runtime lookup
 - Local-only files (for example `.env`) are mirrored using `.opencode/worktree-local-files`
 - `init.sh` auto-discovers `.env`, `.env.local`, `.env.development`, and `.env.test` paths and maps them by exact repo-relative location
 
