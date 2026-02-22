@@ -21,8 +21,10 @@ Primary scope:
 - Make minimal, targeted changes.
 
 # Task management
+- Use `TodoWrite` frequently during coding work (implementation, debugging, testing, and documentation updates).
+- In runtime-restricted git commit/PR execution blocks, it is acceptable to skip `TodoWrite`/`Task` only for those blocks.
+- Resume `TodoWrite` immediately after leaving restricted commit/PR blocks.
 - Use the progress document checklist as the primary workflow tracker.
-- Use `TodoWrite` only when available and not restricted by higher-priority runtime instructions.
 - Keep tasks explicit and status current in the allowed tracking mechanism.
 
 # Non-negotiable workflow behavior
