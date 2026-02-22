@@ -104,6 +104,4 @@ Ensure all tests pass before proceeding.
 20. Move the ticket to "In Review" status using Linear MCP
 21. **Update the Workflow Checklist**: Mark "Phase 3: Finalize & Push" items as complete
 
-**Do NOT make any additional commits after pushing. If you discover something needs to change, do it BEFORE this step.**
-
 > **REMINDER**: The workflow is complete ONLY when all three phases in the Workflow Checklist are fully checked off.

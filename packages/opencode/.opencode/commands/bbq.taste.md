@@ -86,8 +86,6 @@ Follow these steps:
     - Any items that need further discussion
 15. **Update the Workflow Checklist**: Mark "Phase 3: Finalize & Push" items as complete
 
-**Do NOT make any additional commits after pushing. If you discover something needs to change, do it BEFORE this step.**
-
 > **REMINDER**: The workflow is complete ONLY when all three phases in the Workflow Checklist are fully checked off.
 
 Be thorough in addressing feedback and clear in your responses.
