@@ -42,6 +42,13 @@ cp opencode.json /path/to/your/project/
 | `progress-doc` | Track progress in `docs/progress/` |
 | `learnings` | Manage project learnings in `docs/learnings/` |
 
+## House Agents
+
+| Agent | What It Does |
+|-------|--------------|
+| `sous-chef` | Research and planning agent for `/bbq.pantry` and `/bbq.prep` |
+| `pitmaster` | Implementation and review-fix agent for `/bbq.fire` and `/bbq.taste` |
+
 ## The Health Inspector (Plugins)
 
 - **validate-changes** — Auto-runs lint/build/test after commits
@@ -59,6 +66,7 @@ Backlog → In Research → Ready to Plan → Planning → Ready → In Progress
 |----------------|-------|
 | Command behavior | `.opencode/commands/*.md` |
 | Kitchen techniques | `.opencode/skills/*/SKILL.md` |
+| Custom agents | `opencode.json` (`agent`) |
 | House rules template | `.opencode/templates/HOUSE_RULES.md` |
 | MCP connections | `opencode.json` |
 

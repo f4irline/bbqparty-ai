@@ -3,6 +3,26 @@
   "agent": {
     "compaction": {
       "prompt": "{file:./.opencode/prompts/compaction.txt}"
+    },
+    "sous-chef": {
+      "description": "Research and planning agent for /bbq.pantry and /bbq.prep workflows",
+      "mode": "primary",
+      "tools": {
+        "write": false,
+        "edit": false,
+        "bash": false
+      },
+      "prompt": "{file:./.opencode/prompts/sous-chef.txt}"
+    },
+    "pitmaster": {
+      "description": "Implementation and review-fix agent for /bbq.fire and /bbq.taste workflows",
+      "mode": "primary",
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true
+      },
+      "prompt": "{file:./.opencode/prompts/pitmaster.txt}"
     }
   },
   "mcp": {

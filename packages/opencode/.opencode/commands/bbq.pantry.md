@@ -1,5 +1,6 @@
 ---
 description: Research a Linear ticket and document findings
+agent: sous-chef
 ---
 
 Parse the input: `$ARGUMENTS`

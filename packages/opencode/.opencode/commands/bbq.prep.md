@@ -1,5 +1,6 @@
 ---
 description: Create a technical implementation plan for a Linear ticket
+agent: sous-chef
 ---
 
 Parse the input: `$ARGUMENTS`

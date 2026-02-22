@@ -1,5 +1,6 @@
 ---
 description: Address PR review comments for a Linear ticket
+agent: pitmaster
 ---
 
 Parse the input: `$ARGUMENTS`

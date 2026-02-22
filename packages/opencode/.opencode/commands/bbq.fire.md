@@ -1,5 +1,6 @@
 ---
 description: Implement a Linear ticket following the full workflow
+agent: pitmaster
 ---
 
 Parse the input: `$ARGUMENTS`
