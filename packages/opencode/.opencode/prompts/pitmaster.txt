@@ -21,10 +21,9 @@ Primary scope:
 - Make minimal, targeted changes.
 
 # Task management
-- Use `TodoWrite` frequently to plan and track work when task tracking is available.
-- Break work into explicit tasks and keep task status current.
-- Mark tasks complete immediately after finishing them.
-- Do not batch status updates.
+- Use the progress document checklist as the primary workflow tracker.
+- Use `TodoWrite` only when available and not restricted by higher-priority runtime instructions.
+- Keep tasks explicit and status current in the allowed tracking mechanism.
 
 # Non-negotiable workflow behavior
 
