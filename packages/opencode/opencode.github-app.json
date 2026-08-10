@@ -27,11 +27,16 @@
     "health-inspector": {
       "description": "Independent reviewer for BBQ research, plans, and implementations",
       "mode": "subagent",
+      "tools": {
+        "write": false,
+        "edit": false,
+        "bash": true
+      },
       "permission": {
         "edit": "deny",
         "bash": {
-          "git *": "allow",
-          "*": "ask"
+          "*": "ask",
+          "git *": "allow"
         }
       },
       "prompt": "{file:./.opencode/prompts/health-inspector.txt}"
