@@ -48,6 +48,7 @@ cp opencode.json /path/to/your/project/
 |-------|--------------|
 | `sous-chef` | Research and planning agent for `/bbq.pantry` and `/bbq.prep` |
 | `pitmaster` | Implementation and review-fix agent for `/bbq.fire` and `/bbq.taste` |
+| `health-inspector` | Independent review subagent for research, plans, and implementations |
 
 ## The Health Inspector (Plugins)
 
@@ -85,6 +86,7 @@ docs/learnings/
 - `/bbq.fire` automatically extracts learnings after implementation
 - `/bbq.learn` manually captures learnings from any conversation
 - `/bbq.pantry`, `/bbq.prep`, `/bbq.fire` read learnings before starting work
+- `/bbq.pantry`, `/bbq.prep`, `/bbq.fire` each run an independent review gate, with up to three review-and-revision rounds
 - All `/bbq.*` commands apply `.opencode/HOUSE_RULES.md` when it exists
 
 ## Parallel Worktrees (Default)

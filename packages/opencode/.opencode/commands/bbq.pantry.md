@@ -57,7 +57,7 @@ Follow these steps:
    ### Relevant Learnings
    [Learnings from docs/learnings/ if any apply, or "None identified"]
    ```
-8. Move the ticket to "Ready to Plan" status using Linear MCP
+8. Run the Research Review Gate below. Move the ticket to "Ready to Plan" status using Linear MCP only after it passes.
 
 ### If an existing research section exists in the description:
 
@@ -71,6 +71,14 @@ Follow these steps:
    - Remove or adjust rejected approaches
    - Revalidate alignment with House Rules and update exceptions (if any)
    - Update the "Status" date to reflect the revision
-7. If status is not already "Ready to Plan", move it there using Linear MCP
+7. Run the Research Review Gate below. If it passes and status is not already "Ready to Plan", move it there using Linear MCP
 
 Be thorough but concise in your research documentation. Preserve the original ticket description content above the research section.
+
+## Research Review Gate
+
+After creating or revising the Research section, use the Task tool to spawn the `health-inspector` subagent. Give it the ticket ID, user context, and this task: review the current Research section against the full Linear ticket, relevant repository evidence, learnings, and House Rules.
+
+- If it returns `REVIEW_RESULT: PASS`, continue the workflow.
+- If it returns `REVIEW_RESULT: CHANGES_REQUIRED`, revise the Research section to resolve every blocking and important finding, then spawn a fresh `health-inspector` review.
+- Run at most 3 review-and-revision rounds total. If the work still does not pass after round 3, do not move the ticket to "Ready to Plan". Stop and ask the user for further instructions, including the unresolved findings.

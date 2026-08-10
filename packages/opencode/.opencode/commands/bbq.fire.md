@@ -51,7 +51,7 @@ Follow these steps:
    f. Use the git-commit skill from `worktree_path` to commit changes as you go and finish the tasks from progress document
 10. After implementation is complete, the validate-changes plugin will automatically run lint, build, and tests
 11. Use the git-commit skill from `worktree_path` to commit changes with proper message format
-12. **Update the Workflow Checklist**: Mark "Phase 1: Implementation" items as complete in the progress doc
+12. Run the Implementation Review Gate below before updating the Workflow Checklist. Mark "Phase 1: Implementation" items as complete only after it passes.
 
 Ensure all tests pass before proceeding.
 
@@ -105,3 +105,11 @@ Ensure all tests pass before proceeding.
 21. **Update the Workflow Checklist**: Mark "Phase 3: Finalize & Push" items as complete
 
 > **REMINDER**: The workflow is complete ONLY when all three phases in the Workflow Checklist are fully checked off.
+
+## Implementation Review Gate
+
+After implementation and validation are complete, use the Task tool to spawn the `health-inspector` subagent from `worktree_path`. Give it the ticket ID, user context, `worktree_path`, and this task: review the completed implementation and its diff against the full Linear ticket, Technical Plan, House Rules, relevant learnings, and validation results.
+
+- If it returns `REVIEW_RESULT: PASS`, continue with the Learnings phase.
+- If it returns `REVIEW_RESULT: CHANGES_REQUIRED`, resolve every blocking and important finding in `worktree_path`, update tests and progress documentation as needed, run the relevant validation again, commit the revisions with the git-commit skill, then spawn a fresh `health-inspector` review.
+- Run at most 3 review-and-revision rounds total. If the work still does not pass after round 3, do not continue to Learnings, push, create a PR, or move the ticket to "In Review". Stop and ask the user for further instructions, including the unresolved findings.

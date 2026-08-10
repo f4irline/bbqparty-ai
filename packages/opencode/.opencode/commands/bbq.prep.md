@@ -78,7 +78,7 @@ Follow these steps:
    ### Learnings to Apply
    [Relevant learnings from docs/learnings/ or "None identified"]
    ```
-9. Move the ticket to "Ready" status using Linear MCP
+9. Run the Technical Plan Review Gate below. Move the ticket to "Ready" status using Linear MCP only after it passes.
 
 ### If an existing plan section exists in the description:
 
@@ -92,6 +92,14 @@ Follow these steps:
    - Adjust scope, files, or strategy as directed
    - Re-check House Rules alignment and update exceptions/approvals if needed
    - Update the "Status" date to reflect the revision
-7. If status is not already "Ready", move it there using Linear MCP
+7. Run the Technical Plan Review Gate below. If it passes and status is not already "Ready", move it there using Linear MCP
 
 Be specific about what will change and how. Preserve the original ticket description and research section above the plan.
+
+## Technical Plan Review Gate
+
+After creating or revising the Technical Plan section, use the Task tool to spawn the `health-inspector` subagent. Give it the ticket ID, user context, and this task: review the current Technical Plan against the full Linear ticket, Research section, relevant repository evidence, learnings, and House Rules.
+
+- If it returns `REVIEW_RESULT: PASS`, continue the workflow.
+- If it returns `REVIEW_RESULT: CHANGES_REQUIRED`, revise the Technical Plan to resolve every blocking and important finding, then spawn a fresh `health-inspector` review.
+- Run at most 3 review-and-revision rounds total. If the work still does not pass after round 3, do not move the ticket to "Ready". Stop and ask the user for further instructions, including the unresolved findings.
