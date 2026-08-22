@@ -24,8 +24,7 @@ if ! command -v opencode >/dev/null 2>&1; then
   exit 127
 fi
 
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(cd "$script_dir/../.." && pwd)"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 run_root="${BBQ_ORCHESTRATE_RUN_ROOT:-$repo_root/.opencode/.bbq-runs}"
 mkdir -p "$run_root"
 run_dir="$(mktemp -d "$run_root/${ticket_id}-$(date +%Y%m%d%H%M%S)-XXXXXX")"

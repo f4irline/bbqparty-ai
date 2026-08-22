@@ -262,6 +262,8 @@ echo ""
 echo -e "${YELLOW}━━━ 📋 Step 3: Hang the Menu ━━━${NC}"
 
 OPENCODE_SOURCE="$SCRIPT_DIR/packages/opencode"
+WORKFLOW_SCRIPT_SOURCE="$OPENCODE_SOURCE/bbq-orchestrate.sh"
+WORKFLOW_SCRIPT_TARGET="$TARGET_PATH/bbq-orchestrate.sh"
 
 # Select the correct template based on auth method
 if [ "$AUTH_METHOD" = "pat" ]; then
@@ -287,6 +289,10 @@ else
 	cp -R "$OPENCODE_SOURCE/.opencode/." "$TARGET_PATH/.opencode/"
 	echo -e "  ${GREEN}✓ Menu hung${NC}"
 fi
+
+cp "$WORKFLOW_SCRIPT_SOURCE" "$WORKFLOW_SCRIPT_TARGET"
+chmod +x "$WORKFLOW_SCRIPT_TARGET"
+echo -e "  ${GREEN}✓ Workflow script installed ($WORKFLOW_SCRIPT_TARGET)${NC}"
 
 # Ensure worktree local-file sync list exists
 WORKTREE_LOCAL_FILES_FILE="$TARGET_PATH/.opencode/worktree-local-files"
@@ -384,6 +390,7 @@ else
 	echo "    1. source ~/.zshenv"
 	echo "    2. cd $TARGET_PATH && opencode"
 fi
+echo "    Run end-to-end workflow: ./bbq-orchestrate.sh <ticket-id>"
 echo ""
 echo -e "${BLUE}  Worktree station layout:${NC}"
 echo ""
@@ -400,7 +407,6 @@ echo "    /bbq.pantry <order>   🔍 What's in the pantry?"
 echo "    /bbq.prep <order>     🔪 Mise en place"
 echo "    /bbq.fire <order>     🔥 Fire the grill!"
 echo "    /bbq.taste <order>    👨‍🍳 Address the critics"
-echo "    /bbq.orchestrate <order>  🧭 Run pantry, prep, and fire"
 echo "    /bbq.rules            📜 Set up house rules"
 echo "    /bbq.learn            📝 Write down learnings"
 echo ""

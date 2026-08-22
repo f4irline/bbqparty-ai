@@ -58,9 +58,14 @@ BBQ Party is a workflow automation toolkit that turns your Linear tickets into a
 /bbq.prep STU-15        Mise en place (planning)
 /bbq.fire STU-15        Fire! (code, test, PR)
 /bbq.taste STU-15       Address the critics
-/bbq.orchestrate STU-15 Run research, planning, and implementation
 /bbq.rules              Set up house rules
 /bbq.learn              Write down what you learned
+```
+
+Run the end-to-end workflow directly from a configured project:
+
+```bash
+./bbq-orchestrate.sh STU-15 "optional context"
 ```
 
 ## Kitchen Layout
@@ -98,6 +103,7 @@ This will:
 4. 📋 Hang the menu (copy OpenCode config)
 5. 🧭 Prepare project-local worktree root in `.opencode/.bbq-worktrees/`
 6. 🥣 Ensure `.opencode/worktree-local-files` exists and auto-map common `.env*` files
+7. 🧭 Install `./bbq-orchestrate.sh` for end-to-end ticket workflows
 
 ### Authentication Options
 
@@ -195,8 +201,10 @@ See [mcp/github-app/README.md](mcp/github-app/README.md) for detailed GitHub App
    ```
 4. Copy the config:
    ```bash
-   cp -r /path/to/bbqparty/packages/opencode/.opencode .
-   cp /path/to/bbqparty/packages/opencode/opencode.github-pat.json ./opencode.json
+    cp -r /path/to/bbqparty/packages/opencode/.opencode .
+    cp /path/to/bbqparty/packages/opencode/opencode.github-pat.json ./opencode.json
+    cp /path/to/bbqparty/packages/opencode/bbq-orchestrate.sh ./
+    chmod +x ./bbq-orchestrate.sh
    ```
 
 #### For GitHub App Authentication
@@ -218,8 +226,10 @@ See [mcp/github-app/README.md](mcp/github-app/README.md) for detailed GitHub App
    ```
 6. Copy the config:
    ```bash
-   cp -r /path/to/bbqparty/packages/opencode/.opencode .
-   cp /path/to/bbqparty/packages/opencode/opencode.github-app.json ./opencode.json
+    cp -r /path/to/bbqparty/packages/opencode/.opencode .
+    cp /path/to/bbqparty/packages/opencode/opencode.github-app.json ./opencode.json
+    cp /path/to/bbqparty/packages/opencode/bbq-orchestrate.sh ./
+    chmod +x ./bbq-orchestrate.sh
    ```
 
 #### Open for Business
