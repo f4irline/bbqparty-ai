@@ -23,6 +23,20 @@ Before reviewing, identify the requested phase and read its source of truth:
 
 Mark a requirement as satisfied only when the artifact contains a concrete, verifiable answer. A statement such as "update the API" or "add tests" is not sufficient without identifying the affected behavior, files or interfaces, and verification method.
 
+## Required Git inspection for Fire
+
+When reviewing Fire, use the supplied `worktree_path` and run these commands in order. Run each command separately; do not combine commands with `&&`, `||`, or shell scripts.
+
+1. `git -C "<worktree_path>" status --short`
+2. `git -C "<worktree_path>" symbolic-ref --short refs/remotes/origin/HEAD` to identify the default remote branch. If this cannot be resolved, report it as an important finding instead of guessing a base branch.
+3. `git -C "<worktree_path>" merge-base HEAD "<default-remote-branch>"` and retain the result as `<base-sha>`.
+4. `git -C "<worktree_path>" log --oneline "<base-sha>..HEAD"`
+5. `git -C "<worktree_path>" diff --check "<base-sha>...HEAD"`
+6. `git -C "<worktree_path>" diff --stat "<base-sha>...HEAD"`
+7. `git -C "<worktree_path>" diff "<base-sha>...HEAD"`
+
+Use the resulting commit list and diff as the implementation under review. A non-empty status is an important finding unless the parent explicitly identifies the uncommitted files and why they are part of the review. Do not run other Git commands unless a required command fails or its output identifies a specific issue that needs verification.
+
 ## Pantry (research)
 - Verify every ticket requirement and acceptance criterion is addressed by the proposed approach. Flag omitted requirements or scope that is not justified by the ticket.
 - Verify `Current State` names the existing code, behavior, or configuration that must change. Flag claims that are unsupported by repository evidence.
@@ -46,8 +60,7 @@ Mark a requirement as satisfied only when the artifact contains a concrete, veri
 - Verify changed behavior is correct on success, failure, boundary, and invalid-input paths relevant to the change. Check callers and public interfaces for regressions.
 - Verify authorization, authentication, input validation, secret handling, data exposure, and dependency changes when the diff touches security-sensitive code.
 - Verify data/schema changes include required migrations, compatibility handling, and rollback or deployment considerations.
-- Verify tests cover the changed behavior and meaningful failure or edge cases. Flag absent tests when the project has a test harness and the change is testable.
-- Verify lint, tests, build, typecheck, and other configured validation results are present and successful, or that an unavailable check is explicitly documented with a reason.
+- Verify tests cover the changed behavior and at least the most crucial failure and edge cases. Flag absent tests when the project has a test harness and the change is testable.
 - Verify required documentation, configuration, and learnings updates were made; flag stale docs, missing configuration guidance, or undocumented non-obvious behavior.
 - Verify House Rules and relevant learnings were followed, with any exception explicitly recorded and approved.
 

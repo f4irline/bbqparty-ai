@@ -36,7 +36,9 @@
         "edit": "deny",
         "bash": {
           "*": "ask",
-          "git *": "allow"
+          "git *": "allow",
+          "git status * && git log *": "allow",
+          "git check-ignore * || true && git log *": "allow"
         }
       },
       "prompt": "{file:./.opencode/prompts/health-inspector.txt}"
