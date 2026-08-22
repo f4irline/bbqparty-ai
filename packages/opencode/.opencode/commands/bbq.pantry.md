@@ -82,3 +82,13 @@ After creating or revising the Research section, use the Task tool to spawn the 
 - If it returns `REVIEW_RESULT: PASS`, continue the workflow.
 - If it returns `REVIEW_RESULT: CHANGES_REQUIRED`, revise the Research section to resolve every blocking and important finding, then spawn a fresh `health-inspector` review.
 - Run at most 3 review-and-revision rounds total. If the work still does not pass after round 3, do not move the ticket to "Ready to Plan". Stop and ask the user for further instructions, including the unresolved findings.
+
+## Terminal Result
+
+Include exactly one result line in every response:
+
+```text
+BBQ_PHASE_RESULT: COMPLETE
+```
+
+Return `BBQ_PHASE_RESULT: BLOCKED` before asking the user for a decision or reporting an unresolved review gate. Return `BBQ_PHASE_RESULT: FAILED` if the phase cannot complete because of an execution error. Emit `COMPLETE` only after the Research section passes review and the ticket is moved to "Ready to Plan".

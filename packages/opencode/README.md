@@ -25,6 +25,7 @@ cp opencode.json /path/to/your/project/
 | `/bbq.prep <ticket>` | 🔪 Mise en place (technical planning) |
 | `/bbq.fire <ticket>` | 🔥 Fire the grill (code, test, PR) |
 | `/bbq.taste <ticket>` | 👨‍🍳 Address the critics (review comments) |
+| `/bbq.orchestrate <ticket>` | 🧭 Run pantry, prep, then fire for one ticket |
 | `/bbq.rules` | 📜 Set up project house rules |
 | `/bbq.learn` | 📝 Write down learnings from current session |
 
@@ -60,6 +61,12 @@ cp opencode.json /path/to/your/project/
 Backlog → In Research → Ready to Plan → Planning → Ready → In Progress → In Review → Done
            🔍              📋            🔪         ✅        🔥            👨‍🍳        🍽️
 ```
+
+### Scripted Tickets
+
+Use `/bbq.orchestrate STU-15 focus on performance` to run the existing pantry, prep, and fire workflows serially for one ticket. The ticket ID is passed separately from the optional context. The command runs `.opencode/scripts/bbq-orchestrate.sh`, which starts a fresh OpenCode process for each phase and continues only after the preceding phase emits `BBQ_PHASE_RESULT: COMPLETE`.
+
+Each phase retains its existing review gate and status transitions. The script stops when a phase is blocked, fails, or emits no valid result marker, and stores its output under `.opencode/.bbq-runs/`. A future factory can invoke this script for independently admitted tickets while retaining ownership of queueing, concurrency, budgets, and retries.
 
 ## Customizing the Menu
 

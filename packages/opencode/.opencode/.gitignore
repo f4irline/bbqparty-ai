@@ -1,3 +1,4 @@
 .bbq-worktrees/
+.bbq-runs/
 node_modules/
 bun.lock
