@@ -34,11 +34,6 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 127
 fi
 
-if [ -z "${OPENCODE_SERVER_PASSWORD:-}" ]; then
-  printf '%s\n' "OPENCODE_SERVER_PASSWORD is required to secure the OpenCode server" >&2
-  exit 64
-fi
-
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 run_root="${BBQ_ORCHESTRATE_RUN_ROOT:-$repo_root/.opencode/.bbq-runs}"
 mkdir -p "$run_root"

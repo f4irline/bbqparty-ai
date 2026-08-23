@@ -79,7 +79,7 @@ To use an existing loopback server instead, set `BBQ_OPENCODE_URL`; the script w
 BBQ_OPENCODE_URL=http://127.0.0.1:4096 ./bbq-orchestrate.sh STU-15
 ```
 
-By default, the local server uses a random port and retries conflicts. Set `BBQ_OPENCODE_PORT` to use a fixed local port. The runner requires `curl`, `jq`, and `OPENCODE_SERVER_PASSWORD`. It forwards the password to its API requests without adding it to process arguments; set the same variable in the attaching terminal before running the printed command.
+By default, the local server uses a random port and retries conflicts. Set `BBQ_OPENCODE_PORT` to use a fixed local port. The runner requires `curl` and `jq`. When `OPENCODE_SERVER_PASSWORD` is set, it forwards the password to its API requests without adding it to process arguments; set the same variable in the attaching terminal before running the printed command.
 
 ## Customizing the Menu
 

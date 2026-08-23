@@ -8,8 +8,6 @@ target_root="$repo_root/packages/opencode"
 temp_dir="$(mktemp -d)"
 server_url="http://127.0.0.1:48291"
 
-export OPENCODE_SERVER_PASSWORD=barbecue
-
 cleanup() {
   rm -rf "$temp_dir"
 }
@@ -288,22 +286,6 @@ BBQ_OPENCODE_PORT=48123 \
 BBQ_ORCHESTRATE_RUN_ROOT="$temp_dir/runs" \
   "$runner" STU-15 > /dev/null 2>&1; then
   printf '%s\n' "Runner continued after server startup failure" >&2
-  exit 1
-fi
-
-if (
-  unset OPENCODE_SERVER_PASSWORD
-  OPENCODE_CALL_LOG="$temp_dir/no-password-calls" \
-  OPENCODE_CURL_CALL_LOG="$temp_dir/no-password-curl-calls" \
-  OPENCODE_SERVER_STOP_LOG="$temp_dir/server-stop" \
-  OPENCODE_SESSION_COUNTER="$temp_dir/session-counter" \
-  OPENCODE_PORT_EXPECTED=48123 \
-  PATH="$temp_dir/bin:$PATH" \
-  BBQ_OPENCODE_PORT=48123 \
-  BBQ_ORCHESTRATE_RUN_ROOT="$temp_dir/runs" \
-    "$runner" STU-15 > /dev/null 2>&1
-); then
-  printf '%s\n' "Runner started without OPENCODE_SERVER_PASSWORD" >&2
   exit 1
 fi
 
