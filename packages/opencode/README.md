@@ -71,7 +71,15 @@ Run the workflow directly from the target project root:
 ./bbq-orchestrate.sh STU-15 "focus on performance"
 ```
 
-The script runs pantry, prep, and fire serially in the user’s terminal. Each phase retains its existing review gate and status transitions. The script stops when a phase is blocked, fails, or emits no valid result marker, and stores its output under `.opencode/.bbq-runs/`. A future factory can invoke this script for independently admitted tickets while retaining ownership of queueing, concurrency, budgets, and retries.
+The script runs pantry, prep, and fire serially in the user’s terminal. It starts a loopback-only OpenCode server and prints a command for attaching the OpenCode TUI to each active phase. Run that command in another terminal when the agent needs an answer; the phase resumes in the same session and the script continues after its result marker. Each phase retains its existing review gate and status transitions. The script stops when a phase is blocked, fails, or emits no valid result marker, and stores its session and command response logs under `.opencode/.bbq-runs/`.
+
+To use an existing loopback server instead, set `BBQ_OPENCODE_URL`; the script will not start or stop that server:
+
+```bash
+BBQ_OPENCODE_URL=http://127.0.0.1:4096 ./bbq-orchestrate.sh STU-15
+```
+
+By default, the local server uses a random port and retries conflicts. Set `BBQ_OPENCODE_PORT` to use a fixed local port. The runner requires `curl`, `jq`, and `OPENCODE_SERVER_PASSWORD`. It forwards the password to its API requests without adding it to process arguments; set the same variable in the attaching terminal before running the printed command.
 
 ## Customizing the Menu
 

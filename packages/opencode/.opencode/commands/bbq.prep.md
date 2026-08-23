@@ -112,4 +112,4 @@ Include exactly one result line in every response:
 BBQ_PHASE_RESULT: COMPLETE
 ```
 
-Return `BBQ_PHASE_RESULT: BLOCKED` before asking the user for a decision or reporting an unresolved review gate. Return `BBQ_PHASE_RESULT: FAILED` if the phase cannot complete because of an execution error. Emit `COMPLETE` only after the Technical Plan passes review and the ticket is moved to "Ready".
+When a user decision or clarification is needed, use the `question` tool and wait for its answer in the current session. Do not emit `BBQ_PHASE_RESULT: BLOCKED` before calling the `question` tool. Return `BBQ_PHASE_RESULT: BLOCKED` only if the phase still cannot continue after the user interaction. Return `BBQ_PHASE_RESULT: FAILED` if the phase cannot complete because of an execution error. Emit `COMPLETE` only after the Technical Plan passes review and the ticket is moved to "Ready".

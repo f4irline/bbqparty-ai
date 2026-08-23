@@ -68,6 +68,8 @@ Run the end-to-end workflow directly from a configured project:
 ./bbq-orchestrate.sh STU-15 "optional context"
 ```
 
+The runner prints an `opencode attach` command for each active phase, so you can open its TUI in a second terminal when the agent needs input.
+
 ## Kitchen Layout
 
 ```
