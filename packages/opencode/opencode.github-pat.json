@@ -35,7 +35,7 @@
       "permission": {
         "edit": "deny",
         "bash": {
-          "*": "ask",
+          "*": "deny",
           "git *": "allow",
           "git status * && git log *": "allow",
           "git check-ignore * || true && git log *": "allow"
