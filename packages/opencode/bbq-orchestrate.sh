@@ -3,8 +3,31 @@
 set -euo pipefail
 
 usage() {
-  printf '%s\n' "Usage: $0 <ticket-id> [additional context]" >&2
+  printf '%s\n' "Usage: $0 [--start-phase pantry|prep|fire] <ticket-id> [additional context]" >&2
 }
+
+start_phase="pantry"
+
+if [ "${1:-}" = "--start-phase" ]; then
+  if [ "$#" -lt 2 ]; then
+    printf '%s\n' "Missing value for --start-phase" >&2
+    usage
+    exit 64
+  fi
+
+  start_phase="$2"
+  shift 2
+
+  case "$start_phase" in
+    pantry|prep|fire)
+      ;;
+    *)
+      printf 'Invalid start phase: %s\n' "$start_phase" >&2
+      usage
+      exit 64
+      ;;
+  esac
+fi
 
 if [ "$#" -lt 1 ]; then
   usage
@@ -265,12 +288,16 @@ if ! start_server; then
   exit 1
 fi
 
-if ! run_phase "pantry" "bbq.pantry"; then
-  exit 1
+if [ "$start_phase" = "pantry" ]; then
+  if ! run_phase "pantry" "bbq.pantry"; then
+    exit 1
+  fi
 fi
 
-if ! run_phase "prep" "bbq.prep"; then
-  exit 1
+if [ "$start_phase" = "pantry" ] || [ "$start_phase" = "prep" ]; then
+  if ! run_phase "prep" "bbq.prep"; then
+    exit 1
+  fi
 fi
 
 if ! run_phase "fire" "bbq.fire"; then

@@ -155,6 +155,71 @@ for phase in pantry prep fire; do
   fi
 done
 
+if OPENCODE_CALL_LOG="$temp_dir/invalid-start-phase-calls" \
+OPENCODE_CURL_CALL_LOG="$temp_dir/invalid-start-phase-curl-calls" \
+OPENCODE_SERVER_STOP_LOG="$temp_dir/server-stop" \
+OPENCODE_SESSION_COUNTER="$temp_dir/session-counter" \
+OPENCODE_PORT_EXPECTED=48123 \
+PATH="$temp_dir/bin:$PATH" \
+BBQ_OPENCODE_PORT=48123 \
+BBQ_ORCHESTRATE_RUN_ROOT="$temp_dir/runs" \
+  "$runner" --start-phase smoke STU-15 > /dev/null 2> "$temp_dir/invalid-start-phase-output"; then
+  printf '%s\n' "Runner accepted an invalid --start-phase value" >&2
+  exit 1
+else
+  invalid_start_phase_exit=$?
+fi
+
+if [ "$invalid_start_phase_exit" -ne 64 ]; then
+  printf 'Unexpected exit code for an invalid --start-phase value: %s\n' "$invalid_start_phase_exit" >&2
+  exit 1
+fi
+
+invalid_start_phase_output="$(<"$temp_dir/invalid-start-phase-output")"
+expected_invalid_start_phase_output="Invalid start phase: smoke"$'\n'"Usage: $runner [--start-phase pantry|prep|fire] <ticket-id> [additional context]"
+if [ "$invalid_start_phase_output" != "$expected_invalid_start_phase_output" ]; then
+  printf 'Invalid --start-phase error and option-aware usage were not reported:\n%s\n' "$invalid_start_phase_output" >&2
+  exit 1
+fi
+
+if [ -e "$temp_dir/invalid-start-phase-calls" ]; then
+  printf '%s\n' "Runner started OpenCode for an invalid --start-phase value" >&2
+  exit 1
+fi
+
+if OPENCODE_CALL_LOG="$temp_dir/missing-start-phase-calls" \
+OPENCODE_CURL_CALL_LOG="$temp_dir/missing-start-phase-curl-calls" \
+OPENCODE_SERVER_STOP_LOG="$temp_dir/server-stop" \
+OPENCODE_SESSION_COUNTER="$temp_dir/session-counter" \
+OPENCODE_PORT_EXPECTED=48123 \
+PATH="$temp_dir/bin:$PATH" \
+BBQ_OPENCODE_PORT=48123 \
+BBQ_ORCHESTRATE_RUN_ROOT="$temp_dir/runs" \
+  "$runner" --start-phase > /dev/null 2> "$temp_dir/missing-start-phase-output"; then
+  printf '%s\n' "Runner accepted a missing --start-phase value" >&2
+  exit 1
+else
+  missing_start_phase_exit=$?
+fi
+
+if [ "$missing_start_phase_exit" -ne 64 ]; then
+  printf 'Unexpected exit code for a missing --start-phase value: %s\n' "$missing_start_phase_exit" >&2
+  exit 1
+fi
+
+missing_start_phase_output="$(<"$temp_dir/missing-start-phase-output")"
+expected_usage="Usage: $runner [--start-phase pantry|prep|fire] <ticket-id> [additional context]"
+expected_missing_start_phase_output="Missing value for --start-phase"$'\n'"$expected_usage"
+if [ "$missing_start_phase_output" != "$expected_missing_start_phase_output" ]; then
+  printf 'Missing --start-phase error and option-aware usage were not reported:\n%s\n' "$missing_start_phase_output" >&2
+  exit 1
+fi
+
+if [ -e "$temp_dir/missing-start-phase-calls" ]; then
+  printf '%s\n' "Runner started OpenCode for a missing --start-phase value" >&2
+  exit 1
+fi
+
 rm -f "$temp_dir/server-stop" "$temp_dir/session-counter"
 
 OPENCODE_CALL_LOG="$temp_dir/prefixed-calls" \
@@ -354,3 +419,94 @@ for phase in pantry prep fire; do
     exit 1
   fi
 done
+
+rm -f "$temp_dir/server-stop" "$temp_dir/session-counter"
+
+OPENCODE_CALL_LOG="$temp_dir/start-pantry-calls" \
+OPENCODE_CURL_CALL_LOG="$temp_dir/start-pantry-curl-calls" \
+OPENCODE_SERVER_STOP_LOG="$temp_dir/server-stop" \
+OPENCODE_SESSION_COUNTER="$temp_dir/session-counter" \
+OPENCODE_PORT_EXPECTED=48123 \
+PATH="$temp_dir/bin:$PATH" \
+BBQ_OPENCODE_PORT=48123 \
+BBQ_ORCHESTRATE_RUN_ROOT="$temp_dir/runs" \
+  "$runner" --start-phase pantry STU-15 > /dev/null
+
+actual_start_pantry_calls="$(<"$temp_dir/start-pantry-curl-calls")"
+expected_start_pantry_calls="create|$server_url/session|{}"
+for phase in pantry prep fire; do
+  expected_start_pantry_calls+=$'\n'
+  expected_start_pantry_calls+="command|$server_url/session/ses_$phase/command|{\"command\":\"bbq.$phase\",\"arguments\":\"STU-15\"}"
+  if [ "$phase" != "fire" ]; then
+    expected_start_pantry_calls+=$'\n'
+    expected_start_pantry_calls+="create|$server_url/session|{}"
+  fi
+done
+
+if [ "$actual_start_pantry_calls" != "$expected_start_pantry_calls" ]; then
+  printf 'Unexpected curl calls when starting at pantry:\n%s\n' "$actual_start_pantry_calls" >&2
+  exit 1
+fi
+
+if [ "$(<"$temp_dir/server-stop")" != "stopped" ]; then
+  printf '%s\n' "Runner did not stop its local OpenCode server after starting at pantry" >&2
+  exit 1
+fi
+
+rm -f "$temp_dir/server-stop" "$temp_dir/session-counter"
+
+OPENCODE_CALL_LOG="$temp_dir/start-prep-calls" \
+OPENCODE_CURL_CALL_LOG="$temp_dir/start-prep-curl-calls" \
+OPENCODE_SERVER_STOP_LOG="$temp_dir/server-stop" \
+OPENCODE_SESSION_COUNTER="$temp_dir/session-counter" \
+OPENCODE_PORT_EXPECTED=48123 \
+PATH="$temp_dir/bin:$PATH" \
+BBQ_OPENCODE_PORT=48123 \
+BBQ_ORCHESTRATE_RUN_ROOT="$temp_dir/runs" \
+  "$runner" --start-phase prep STU-15 > /dev/null
+
+actual_start_prep_calls="$(<"$temp_dir/start-prep-curl-calls")"
+expected_start_prep_calls="create|$server_url/session|{}"
+expected_start_prep_calls+=$'\n'
+expected_start_prep_calls+="command|$server_url/session/ses_pantry/command|{\"command\":\"bbq.prep\",\"arguments\":\"STU-15\"}"
+expected_start_prep_calls+=$'\n'
+expected_start_prep_calls+="create|$server_url/session|{}"
+expected_start_prep_calls+=$'\n'
+expected_start_prep_calls+="command|$server_url/session/ses_prep/command|{\"command\":\"bbq.fire\",\"arguments\":\"STU-15\"}"
+
+if [ "$actual_start_prep_calls" != "$expected_start_prep_calls" ]; then
+  printf 'Unexpected curl calls when starting at prep:\n%s\n' "$actual_start_prep_calls" >&2
+  exit 1
+fi
+
+if [ "$(<"$temp_dir/server-stop")" != "stopped" ]; then
+  printf '%s\n' "Runner did not stop its local OpenCode server after starting at prep" >&2
+  exit 1
+fi
+
+rm -f "$temp_dir/server-stop" "$temp_dir/session-counter"
+
+OPENCODE_CALL_LOG="$temp_dir/start-fire-calls" \
+OPENCODE_CURL_CALL_LOG="$temp_dir/start-fire-curl-calls" \
+OPENCODE_SERVER_STOP_LOG="$temp_dir/server-stop" \
+OPENCODE_SESSION_COUNTER="$temp_dir/session-counter" \
+OPENCODE_PORT_EXPECTED=48123 \
+PATH="$temp_dir/bin:$PATH" \
+BBQ_OPENCODE_PORT=48123 \
+BBQ_ORCHESTRATE_RUN_ROOT="$temp_dir/runs" \
+  "$runner" --start-phase fire STU-15 > /dev/null
+
+actual_start_fire_calls="$(<"$temp_dir/start-fire-curl-calls")"
+expected_start_fire_calls="create|$server_url/session|{}"
+expected_start_fire_calls+=$'\n'
+expected_start_fire_calls+="command|$server_url/session/ses_pantry/command|{\"command\":\"bbq.fire\",\"arguments\":\"STU-15\"}"
+
+if [ "$actual_start_fire_calls" != "$expected_start_fire_calls" ]; then
+  printf 'Unexpected curl calls when starting at fire:\n%s\n' "$actual_start_fire_calls" >&2
+  exit 1
+fi
+
+if [ "$(<"$temp_dir/server-stop")" != "stopped" ]; then
+  printf '%s\n' "Runner did not stop its local OpenCode server after starting at fire" >&2
+  exit 1
+fi

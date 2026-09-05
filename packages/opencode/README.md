@@ -71,6 +71,15 @@ Run the workflow directly from the target project root:
 ./bbq-orchestrate.sh STU-15 "focus on performance"
 ```
 
+When prior research or planning is complete, start later in the workflow with
+`--start-phase`. Valid values are `pantry` (default), `prep`, and `fire`; the
+script runs the selected phase and every later phase:
+
+```bash
+./bbq-orchestrate.sh --start-phase prep STU-15
+./bbq-orchestrate.sh --start-phase fire STU-15
+```
+
 The script runs pantry, prep, and fire serially in the user’s terminal. It starts a loopback-only OpenCode server and prints a command for attaching the OpenCode TUI to each active phase. Run that command in another terminal when the agent needs an answer; the phase resumes in the same session and the script continues after its result marker. Each phase retains its existing review gate and status transitions. The script stops when a phase is blocked, fails, or emits no valid result marker, and stores its session and command response logs under `.opencode/.bbq-runs/`.
 
 To use an existing loopback server instead, set `BBQ_OPENCODE_URL`; the script will not start or stop that server:
