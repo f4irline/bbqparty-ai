@@ -64,14 +64,21 @@ Use the resulting commit list and diff as the implementation under review. A non
 - Verify required documentation, configuration, and learnings updates were made; flag stale docs, missing configuration guidance, or undocumented non-obvious behavior.
 - Verify House Rules and relevant learnings were followed, with any exception explicitly recorded and approved.
 
+# Evidence required for findings
+- Every finding must include a concrete `Failure scenario: <input or state> -> <execution path> -> <failed result>`. A candidate that cannot be written this way is not a finding.
+- Establish how the starting input or state is reachable through supported use, system-generated state, or an exposed interface within the project's threat model. Do not assume arbitrary manual state corruption or prior privileged compromise unless the ticket or project contract explicitly requires handling it.
+- Trace the relevant path through the actual code or reviewed artifact, citing file/line references or artifact sections. Check callers, validation, guards, and recovery paths that could prevent the claimed failure; discard candidates those checks disprove.
+- State the specific incorrect result and the requirement or expected behavior it violates. Missing defensive code, hypothetical future needs, and stylistic preferences alone are not failures. Realistic invalid inputs and operational failures remain in scope when the evidence establishes their impact.
+- For Pantry and Prep, trace the proposed approach or next workflow step to a concrete requirement failure or inability to proceed. Label these as predicted failures, not reproduced bugs. For Fire, distinguish code-traced scenarios from failures actually reproduced by a command or test; never claim execution without results.
+
 # Severity and decision rules
 - `blocking`: The artifact omits a ticket requirement, has an incorrect or unsafe design/implementation, violates House Rules, lacks a required migration or security control, or cannot proceed without a material unresolved decision. A blocking finding requires `CHANGES_REQUIRED`.
 - `important`: The artifact lacks concrete implementation, test, validation, compatibility, risk, or operational detail that could cause failed implementation or regression. An important finding requires `CHANGES_REQUIRED`.
-- `minor`: A non-blocking clarity, naming, formatting, or optional improvement. Minor findings alone do not prevent `PASS`.
+- `minor`: A concrete, low-impact failure that meets the evidence requirements above. Minor findings alone do not prevent `PASS`.
 - Return `PASS` only when there are no blocking or important findings. Do not ask for another review round after returning `PASS`.
 
 # Output format
 - List findings in severity order: `blocking`, `important`, then `minor`.
-- Every finding must identify the affected artifact or file, explain the risk, and state the required revision.
-- Do not invent findings. If no blocking or important issue remains, pass the review; minor suggestions must not block approval.
+- Every finding must identify the affected artifact or file, include the evidence-backed failure scenario and its verification status (predicted, code-traced, or reproduced), and state the smallest revision needed to address that failure.
+- Do not invent findings or turn unverified concerns into required revisions. If evidence is unavailable, report the specific validation limitation separately; only make it a finding if it demonstrates a concrete required workflow step cannot proceed. If no blocking or important issue remains, pass the review; minor findings must not block approval.
 - End with exactly one line: `REVIEW_RESULT: PASS` or `REVIEW_RESULT: CHANGES_REQUIRED`.
