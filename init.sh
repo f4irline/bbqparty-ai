@@ -211,49 +211,57 @@ echo ""
 echo -e "${YELLOW}━━━ 🧂 Step 2: Stock the Pantry ━━━${NC}"
 if [ "$SKIP_ENV" = true ]; then
 	echo -e "  Skipping (pantry already stocked)"
-elif [ "$AUTH_METHOD" = "pat" ]; then
-	# PAT setup
-	echo -e "  Add these ingredients to ${CYAN}~/.zshenv${NC}:"
-	echo ""
-	echo "    export BBQ_LINEAR_API_KEY=\"lin_api_xxxxx\""
-	echo "    export BBQ_GITHUB_PAT=\"github_pat_xxxxx\""
-	echo ""
-	echo -e "  ${BLUE}Tip:${NC} Create a dedicated GitHub account for the AI agent"
-	echo -e "       to use as a 'service account' for cleaner audit trails."
-	echo ""
-	echo -e "  ${BLUE}Create a Fine-Grained PAT:${NC}"
-	echo -e "    ${CYAN}https://github.com/settings/personal-access-tokens/new${NC}"
-	echo ""
-	echo -e "  ${BLUE}Required Repository Permissions:${NC}"
-	echo "    • Contents: Read and write"
-	echo "    • Issues: Read and write"
-	echo "    • Pull requests: Read and write"
-	echo "    • Metadata: Read-only (auto-selected)"
-	echo ""
-	echo -e "  ${BLUE}Optional Organization Permissions:${NC}"
-	echo "    • Members: Read-only (for team features)"
 else
-	# GitHub App setup (existing behavior)
-	if [ -n "$PEM_PATH" ]; then
-		if [ ! -f "$PEM_PATH" ]; then
-			echo -e "  ${RED}🔥 Secret sauce not found: $PEM_PATH${NC}"
-			exit 1
-		fi
-		echo "  Adding the secret sauce..."
-		"$SCRIPT_DIR/mcp/github-app/scripts/setup-github-key.sh" "$PEM_PATH"
-		echo -e "  ${GREEN}✓ Secret sauce secured${NC}"
+	echo -e "  Choose any environment variable name for your Linear API key."
+	echo -e "  Add it to ${CYAN}~/.zshenv${NC}:"
+	echo ""
+	echo "    export YOUR_LINEAR_API_KEY_ENV_VAR=\"lin_api_xxxxx\""
+	echo ""
+	echo "  Replace YOUR_LINEAR_API_KEY_ENV_VAR in opencode.json with that name."
+	echo ""
+
+	if [ "$AUTH_METHOD" = "pat" ]; then
+		# PAT setup
+		echo -e "  Add this GitHub ingredient to ${CYAN}~/.zshenv${NC}:"
+		echo ""
+		echo "    export BBQ_GITHUB_PAT=\"github_pat_xxxxx\""
+		echo ""
+		echo -e "  ${BLUE}Tip:${NC} Create a dedicated GitHub account for the AI agent"
+		echo -e "       to use as a 'service account' for cleaner audit trails."
+		echo ""
+		echo -e "  ${BLUE}Create a Fine-Grained PAT:${NC}"
+		echo -e "    ${CYAN}https://github.com/settings/personal-access-tokens/new${NC}"
+		echo ""
+		echo -e "  ${BLUE}Required Repository Permissions:${NC}"
+		echo "    • Contents: Read and write"
+		echo "    • Issues: Read and write"
+		echo "    • Pull requests: Read and write"
+		echo "    • Metadata: Read-only (auto-selected)"
+		echo ""
+		echo -e "  ${BLUE}Optional Organization Permissions:${NC}"
+		echo "    • Members: Read-only (for team features)"
 	else
-		echo -e "  ${YELLOW}No secret sauce provided (--pem)${NC}"
-		echo ""
-		echo -e "  Add these ingredients to ${CYAN}~/.zshenv${NC}:"
-		echo ""
-		echo "    export BBQ_LINEAR_API_KEY=\"lin_api_xxxxx\""
-		echo "    export BBQ_GITHUB_APP_ID=\"123456\""
-		echo "    export BBQ_GITHUB_APP_INSTALLATION_ID=\"12345678\""
-		echo "    export BBQ_GITHUB_APP_PRIVATE_KEY=\"<base64-encoded-key>\""
-		echo ""
-		echo "  Or run the prep script later:"
-		echo "    $SCRIPT_DIR/mcp/github-app/scripts/setup-github-key.sh /path/to/key.pem"
+		# GitHub App setup (existing behavior)
+		if [ -n "$PEM_PATH" ]; then
+			if [ ! -f "$PEM_PATH" ]; then
+				echo -e "  ${RED}🔥 Secret sauce not found: $PEM_PATH${NC}"
+				exit 1
+			fi
+			echo "  Adding the secret sauce..."
+			"$SCRIPT_DIR/mcp/github-app/scripts/setup-github-key.sh" "$PEM_PATH"
+			echo -e "  ${GREEN}✓ Secret sauce secured${NC}"
+		else
+			echo -e "  ${YELLOW}No secret sauce provided (--pem)${NC}"
+			echo ""
+			echo -e "  Add these GitHub ingredients to ${CYAN}~/.zshenv${NC}:"
+			echo ""
+			echo "    export BBQ_GITHUB_APP_ID=\"123456\""
+			echo "    export BBQ_GITHUB_APP_INSTALLATION_ID=\"12345678\""
+			echo "    export BBQ_GITHUB_APP_PRIVATE_KEY=\"<base64-encoded-key>\""
+			echo ""
+			echo "  Or run the prep script later:"
+			echo "    $SCRIPT_DIR/mcp/github-app/scripts/setup-github-key.sh /path/to/key.pem"
+		fi
 	fi
 fi
 echo ""

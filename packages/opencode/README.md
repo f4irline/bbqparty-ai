@@ -18,6 +18,14 @@ cp bbq-orchestrate.sh /path/to/your/project/
 chmod +x /path/to/your/project/bbq-orchestrate.sh
 ```
 
+Choose an environment variable name for your Linear API key and export the
+key under that name. Replace `YOUR_LINEAR_API_KEY_ENV_VAR` in the copied
+`opencode.json` with the same name so OpenCode can read it:
+
+```bash
+export YOUR_LINEAR_API_KEY_ENV_VAR="lin_api_xxxxx"
+```
+
 ## The Menu
 
 | Command | What It Does |

@@ -148,8 +148,13 @@ The simplest setup. Uses [GitHub's official MCP server](https://github.com/githu
 5. Click **Generate token** and copy the token (starts with `github_pat_`)
 
 **Environment variables needed:**
+
+Choose any environment variable name for your Linear API key. Export the key
+under that name, then replace `YOUR_LINEAR_API_KEY_ENV_VAR` in `opencode.json`
+with the same name.
+
 ```bash
-export BBQ_LINEAR_API_KEY="lin_api_xxxxx"
+export YOUR_LINEAR_API_KEY_ENV_VAR="lin_api_xxxxx"
 export BBQ_GITHUB_PAT="github_pat_xxxxx"
 ```
 
@@ -173,8 +178,13 @@ Use a dedicated bot identity. Uses custom MCP server with 12 essential tools.
 - Fewer tools (12 vs 60+)
 
 **Environment variables needed:**
+
+Choose any environment variable name for your Linear API key. Export the key
+under that name, then replace `YOUR_LINEAR_API_KEY_ENV_VAR` in `opencode.json`
+with the same name.
+
 ```bash
-export BBQ_LINEAR_API_KEY="lin_api_xxxxx"
+export YOUR_LINEAR_API_KEY_ENV_VAR="lin_api_xxxxx"
 export BBQ_GITHUB_APP_ID="123456"
 export BBQ_GITHUB_APP_INSTALLATION_ID="12345678"
 export BBQ_GITHUB_APP_PRIVATE_KEY="<base64-encoded-key>"
@@ -192,9 +202,11 @@ See [mcp/github-app/README.md](mcp/github-app/README.md) for detailed GitHub App
 1. Create a Fine-Grained PAT at https://github.com/settings/personal-access-tokens/new
    - **Repository permissions**: Contents (R/W), Issues (R/W), Pull requests (R/W), Metadata (R)
    - **Organization permissions** (optional): Members (R)
-2. Add to `~/.zshenv`:
+2. Choose any environment variable name for your Linear API key. Add it to
+   `~/.zshenv`, then replace `YOUR_LINEAR_API_KEY_ENV_VAR` in the copied
+   `opencode.json` with the same name:
    ```bash
-   export BBQ_LINEAR_API_KEY="lin_api_xxxxx"
+   export YOUR_LINEAR_API_KEY_ENV_VAR="lin_api_xxxxx"
    export BBQ_GITHUB_PAT="github_pat_xxxxx"
    ```
 3. Pull the official GitHub MCP:
@@ -214,9 +226,11 @@ See [mcp/github-app/README.md](mcp/github-app/README.md) for detailed GitHub App
 1. Create a GitHub App (see [mcp/github-app/README.md](mcp/github-app/README.md))
 2. Install it on your repo
 3. Download the private key
-4. Add to `~/.zshenv`:
+4. Choose any environment variable name for your Linear API key. Add it to
+   `~/.zshenv`, then replace `YOUR_LINEAR_API_KEY_ENV_VAR` in the copied
+   `opencode.json` with the same name:
    ```bash
-   export BBQ_LINEAR_API_KEY="lin_api_xxxxx"
+   export YOUR_LINEAR_API_KEY_ENV_VAR="lin_api_xxxxx"
    export BBQ_GITHUB_APP_ID="123456"
    export BBQ_GITHUB_APP_INSTALLATION_ID="12345678"
    export BBQ_GITHUB_APP_PRIVATE_KEY="<base64-encoded-key>"
