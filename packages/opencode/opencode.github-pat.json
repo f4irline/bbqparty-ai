@@ -65,7 +65,7 @@
         "ghcr.io/github/github-mcp-server"
       ],
       "environment": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:BBQ_GITHUB_PAT}"
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:YOUR_GITHUB_PAT_ENV_VAR}"
       },
       "enabled": true
     }

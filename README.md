@@ -151,11 +151,12 @@ The simplest setup. Uses [GitHub's official MCP server](https://github.com/githu
 
 Choose any environment variable name for your Linear API key. Export the key
 under that name, then replace `YOUR_LINEAR_API_KEY_ENV_VAR` in `opencode.json`
-with the same name.
+with the same name. Do the same for your GitHub PAT using the
+`YOUR_GITHUB_PAT_ENV_VAR` placeholder.
 
 ```bash
 export YOUR_LINEAR_API_KEY_ENV_VAR="lin_api_xxxxx"
-export BBQ_GITHUB_PAT="github_pat_xxxxx"
+export YOUR_GITHUB_PAT_ENV_VAR="github_pat_xxxxx"
 ```
 
 > **Tip:** Consider creating a dedicated GitHub account as a "service account" for cleaner audit trails. The AI's actions will appear as that account.
@@ -202,12 +203,12 @@ See [mcp/github-app/README.md](mcp/github-app/README.md) for detailed GitHub App
 1. Create a Fine-Grained PAT at https://github.com/settings/personal-access-tokens/new
    - **Repository permissions**: Contents (R/W), Issues (R/W), Pull requests (R/W), Metadata (R)
    - **Organization permissions** (optional): Members (R)
-2. Choose any environment variable name for your Linear API key. Add it to
-   `~/.zshenv`, then replace `YOUR_LINEAR_API_KEY_ENV_VAR` in the copied
-   `opencode.json` with the same name:
+2. Choose environment variable names for your Linear API key and GitHub PAT.
+   Add them to `~/.zshenv`, then replace `YOUR_LINEAR_API_KEY_ENV_VAR` and
+   `YOUR_GITHUB_PAT_ENV_VAR` in the copied `opencode.json` with the same names:
    ```bash
    export YOUR_LINEAR_API_KEY_ENV_VAR="lin_api_xxxxx"
-   export BBQ_GITHUB_PAT="github_pat_xxxxx"
+   export YOUR_GITHUB_PAT_ENV_VAR="github_pat_xxxxx"
    ```
 3. Pull the official GitHub MCP:
    ```bash

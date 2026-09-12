@@ -26,6 +26,13 @@ key under that name. Replace `YOUR_LINEAR_API_KEY_ENV_VAR` in the copied
 export YOUR_LINEAR_API_KEY_ENV_VAR="lin_api_xxxxx"
 ```
 
+When using the GitHub PAT config, likewise choose a variable name for the PAT,
+export it, and replace `YOUR_GITHUB_PAT_ENV_VAR` in the copied `opencode.json`:
+
+```bash
+export YOUR_GITHUB_PAT_ENV_VAR="github_pat_xxxxx"
+```
+
 ## The Menu
 
 | Command | What It Does |

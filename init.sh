@@ -222,9 +222,12 @@ else
 
 	if [ "$AUTH_METHOD" = "pat" ]; then
 		# PAT setup
-		echo -e "  Add this GitHub ingredient to ${CYAN}~/.zshenv${NC}:"
+		echo -e "  Choose any environment variable name for your GitHub PAT."
+		echo -e "  Add it to ${CYAN}~/.zshenv${NC}:"
 		echo ""
-		echo "    export BBQ_GITHUB_PAT=\"github_pat_xxxxx\""
+		echo "    export YOUR_GITHUB_PAT_ENV_VAR=\"github_pat_xxxxx\""
+		echo ""
+		echo "  Replace YOUR_GITHUB_PAT_ENV_VAR in opencode.json with that name."
 		echo ""
 		echo -e "  ${BLUE}Tip:${NC} Create a dedicated GitHub account for the AI agent"
 		echo -e "       to use as a 'service account' for cleaner audit trails."

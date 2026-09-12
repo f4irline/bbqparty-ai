@@ -136,7 +136,8 @@ Commit rules:
 Primary environment variables:
 - User-chosen Linear API key variable, referenced from `opencode.json` via
   the `YOUR_LINEAR_API_KEY_ENV_VAR` placeholder
-- `BBQ_GITHUB_PAT`
+- User-chosen GitHub PAT variable, referenced from `opencode.json` via the
+  `YOUR_GITHUB_PAT_ENV_VAR` placeholder
 - `BBQ_GITHUB_APP_ID`
 - `BBQ_GITHUB_APP_INSTALLATION_ID`
 - `BBQ_GITHUB_APP_PRIVATE_KEY`
