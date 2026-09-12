@@ -29,12 +29,17 @@ Follow these steps:
 - Track any required exception explicitly in progress documentation.
 
 4. Ask clarifying questions if anything is unclear before starting
-5. Use the `git-branch-create` skill to resolve a properly named ticket branch
-6. Use the `git-worktree-prepare` skill to create or reuse a dedicated worktree for that branch
-   - Worktree behavior is **default-on** for `/bbq.fire`
-   - Worktrees are created under `.opencode/.bbq-worktrees/` in the project root
-   - Local-only files are mirrored from `.opencode/worktree-local-files`
-   - Capture outputs as `branch_name` and `worktree_path`
+5. Use the `git-branch-create` skill to resolve a properly named ticket branch. It returns the branch to the caller-selected worktree provider.
+6. Resolve the worktree provider after resolving `repo_root`, `branch_name`, and the remote default branch:
+    - Read `.opencode/bbq-config.json` with `jq`. A missing file means `runtime == "native"`. Invalid JSON or any runtime other than `native` or `herdr` is an actionable error; do not guess a provider.
+    - Use Herdr only when `runtime == "herdr"` **and** `HERDR_ENV=1`. In that case explicitly load and follow the installed `herdr` skill before running its CLI commands.
+    - With active Herdr, confirm the installed CLI syntax, then run `herdr worktree list --cwd "{repo-root}"` and inspect its JSON `.result.worktrees` for the matching branch.
+    - When the matching checkout exists but has no `open_workspace_id`, open it without focus: `herdr worktree open --cwd "{repo-root}" --branch "{branch-name}" --label "{ticket-id}" --no-focus`. Parse `.result.workspace.workspace_id` only as workspace metadata.
+    - When no checkout exists, compute the deterministic absolute `.opencode/.bbq-worktrees/{branch-slug}` path. Use `origin/{branch-name}` as the base when only a remote ticket branch exists; otherwise use the resolved remote default branch. Run `herdr worktree create --cwd "{repo-root}" --branch "{branch-name}" --base "{base-ref}" --path "{worktree-path}" --label "{ticket-id}" --no-focus`.
+    - Parse the authoritative checkout path from `.result.worktree.path` (or its matching `.result.worktrees` entry), never from `.result.workspace.workspace_id`.
+    - If Herdr is configured but `HERDR_ENV=1` is absent, state that native fallback is active and use the native fallback `git-worktree-prepare` skill.
+    - Under either provider, run `"{repo-root}/.opencode/scripts/sync-worktree-local-files.sh" "{repo-root}" "{worktree-path}"` after resolving the path. Worktree behavior is default-on and paths remain under `.opencode/.bbq-worktrees/`.
+    - Capture outputs as `branch_name` and `worktree_path`. The `git-worktree-find` skill remains the native fallback provider for continued review work in `/bbq.taste`.
 7. From this point forward, run **all git, code, test, and documentation actions in that worktree path**
    - Prefer explicit path-aware commands (`git -C "{worktree_path}" ...`) when possible
    - Do not rely on current working directory after worktree creation

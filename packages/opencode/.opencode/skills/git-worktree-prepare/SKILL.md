@@ -110,44 +110,15 @@ worktree: /Users/me/projects/my-repo/.opencode/.bbq-worktrees/feat-STU-15-user-a
    git -C "{worktree-path}" branch --show-current
    ```
 
-7. Sync local-only files/directories from the source checkout:
-   - Read allowlist from `"{repo-root}/.opencode/worktree-local-files"`
-   - For each listed path:
-     - If source exists and target is missing, mirror it into the worktree
-     - Prefer symlink (`ln -s`) so updates in source are reflected everywhere
-     - Fallback to copy (`cp -R`) if symlink is not possible
-   - Never overwrite existing files in the worktree
+7. Sync local-only files/directories from the source checkout with the native fallback provider's shared helper:
 
-   ```bash
-   source_root="$(git rev-parse --show-toplevel)"
-   worktree_path="{worktree-path}"
-   sync_list="$source_root/.opencode/worktree-local-files"
-   linked_count=0
-   copied_count=0
+    ```bash
+    "{repo-root}/.opencode/scripts/sync-worktree-local-files.sh" \
+      "{repo-root}" \
+      "{worktree-path}"
+    ```
 
-   if [ -f "$sync_list" ]; then
-     while IFS= read -r rel || [ -n "$rel" ]; do
-       case "$rel" in
-         ""|\#*) continue ;;
-       esac
-
-       src="$source_root/$rel"
-       dst="$worktree_path/$rel"
-
-       if [ ! -e "$src" ] || [ -e "$dst" ]; then
-         continue
-       fi
-
-       mkdir -p "$(dirname "$dst")"
-       if ln -s "$src" "$dst" 2>/dev/null; then
-         linked_count=$((linked_count + 1))
-       else
-         cp -R "$src" "$dst"
-         copied_count=$((copied_count + 1))
-       fi
-     done < "$sync_list"
-   fi
-   ```
+    The helper reads `.opencode/worktree-local-files`, prevents path traversal, prefers symlinks, falls back to copies, and never overwrites an existing worktree entry.
 
 ## Output
 

@@ -10,12 +10,14 @@
 #   --pem <path>             Path to GitHub App private key (.pem file) [requires --auth-method app]
 #   --skip-docker            Skip Docker image build/pull
 #   --skip-env               Skip environment variable setup
+#   --herdr                  Use Herdr for persistent phase agents and worktrees
 #   --help                   Show this help message
 #
 # Examples:
 #   ./init.sh /path/to/my-project
 #   ./init.sh /path/to/my-project --auth-method pat
 #   ./init.sh /path/to/my-project --auth-method app --pem ~/keys/github-app.pem
+#   ./init.sh /path/to/my-project --herdr
 #   ./init.sh . --skip-docker
 
 set -e
@@ -39,6 +41,9 @@ AUTH_METHOD=""
 WORKTREE_ROOT=""
 SKIP_DOCKER=false
 SKIP_ENV=false
+HERDR_MODE=""
+HERDR_VERSION=""
+HERDR_SKILL_URL=""
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -63,6 +68,10 @@ while [[ $# -gt 0 ]]; do
 		SKIP_ENV=true
 		shift
 		;;
+	--herdr)
+		HERDR_MODE=true
+		shift
+		;;
 	--help | -h)
 		echo "🍖 BBQ Party - Open the Kitchen"
 		echo ""
@@ -75,12 +84,14 @@ while [[ $# -gt 0 ]]; do
 		echo "  --pem <path>             Path to GitHub App private key [requires --auth-method app]"
 		echo "  --skip-docker            Skip firing up the grill"
 		echo "  --skip-env               Skip stocking the pantry"
+		echo "  --herdr                  Use Herdr for persistent phase agents and worktrees"
 		echo "  --help                   Show this menu"
 		echo ""
 		echo "Examples:"
 		echo "  $0 /path/to/my-project"
 		echo "  $0 /path/to/my-project --auth-method pat"
 		echo "  $0 /path/to/my-project --auth-method app --pem ~/keys/github-app.pem"
+		echo "  $0 /path/to/my-project --herdr"
 		exit 0
 		;;
 	-*)
@@ -106,6 +117,106 @@ if [ -z "$TARGET_PATH" ]; then
 	echo "Run '$0 --help' for the full menu"
 	exit 1
 fi
+
+validate_herdr() {
+	local version_output
+	local major
+	local minor
+	local patch
+	local worktree_help
+	local agent_help
+	local tab_help
+
+	if ! command -v herdr >/dev/null 2>&1; then
+		echo -e "${RED}Herdr mode requires the Herdr CLI.${NC}" >&2
+		echo "Install it from https://github.com/herdrdev/herdr or with Homebrew: brew install herdrdev/tap/herdr" >&2
+		return 1
+	fi
+
+	if ! command -v curl >/dev/null 2>&1; then
+		echo -e "${RED}Herdr mode requires curl in PATH.${NC}" >&2
+		return 1
+	fi
+
+	if ! version_output="$(herdr --version 2>&1)" || ! [[ "$version_output" =~ ([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+		echo -e "${RED}Could not parse a semantic Herdr version from: $version_output${NC}" >&2
+		return 1
+	fi
+
+	major="${BASH_REMATCH[1]}"
+	minor="${BASH_REMATCH[2]}"
+	patch="${BASH_REMATCH[3]}"
+	if [ "$major" -eq 0 ] && { [ "$minor" -lt 9 ] || { [ "$minor" -eq 9 ] && [ "$patch" -lt 0 ]; }; }; then
+		echo -e "${RED}Herdr v0.9.0 or newer is required (found $version_output).${NC}" >&2
+		return 1
+	fi
+
+	HERDR_VERSION="$major.$minor.$patch"
+	HERDR_SKILL_URL="https://raw.githubusercontent.com/herdrdev/herdr/v$HERDR_VERSION/skills/herdr/SKILL.md"
+
+	if ! worktree_help="$(herdr worktree help 2>&1)" || [[ "$worktree_help" != *list* ]] || [[ "$worktree_help" != *create* ]] || [[ "$worktree_help" != *open* ]]; then
+		echo -e "${RED}Installed Herdr lacks required worktree list, create, or open commands.${NC}" >&2
+		return 1
+	fi
+
+	if ! agent_help="$(herdr agent help 2>&1)" || [[ "$agent_help" != *start* ]] || [[ "$agent_help" != *prompt* ]] || [[ "$agent_help" != *wait* ]] || [[ "$agent_help" != *read* ]]; then
+		echo -e "${RED}Installed Herdr lacks required agent start, prompt, wait, or read commands.${NC}" >&2
+		return 1
+	fi
+
+	if ! tab_help="$(herdr tab help 2>&1)" || [[ "$tab_help" != *create* ]]; then
+		echo -e "${RED}Installed Herdr lacks the required tab create command.${NC}" >&2
+		return 1
+	fi
+}
+
+install_herdr_skill() {
+	local skill_dir="$TARGET_PATH/.opencode/skills/herdr"
+	local skill_target="$skill_dir/SKILL.md"
+	local skill_temp
+	local first_line
+
+	skill_temp="$(mktemp "$TARGET_PATH/.opencode/herdr-skill.XXXXXX")"
+	if ! curl --fail --silent --show-error --location "$HERDR_SKILL_URL" > "$skill_temp"; then
+		rm -f "$skill_temp"
+		echo -e "${RED}Failed to download the Herdr skill from $HERDR_SKILL_URL${NC}" >&2
+		return 1
+	fi
+
+	IFS= read -r first_line < "$skill_temp" || true
+	if [ "$first_line" != "---" ] || ! grep -Fqx "name: herdr" "$skill_temp" || ! grep -Fq "Requires HERDR_ENV=1" "$skill_temp"; then
+		rm -f "$skill_temp"
+		echo -e "${RED}Downloaded Herdr skill failed validation: $HERDR_SKILL_URL${NC}" >&2
+		return 1
+	fi
+
+	mkdir -p "$skill_dir"
+	mv "$skill_temp" "$skill_target"
+	echo -e "  ${GREEN}✓ Herdr skill installed (v$HERDR_VERSION)${NC}"
+}
+
+install_herdr_opencode_integration() {
+	local integration_status
+	local opencode_status
+
+	if ! integration_status="$(herdr integration status 2>&1)"; then
+		echo -e "${RED}Could not inspect the Herdr OpenCode integration.${NC}" >&2
+		return 1
+	fi
+
+	opencode_status="$(printf '%s\n' "$integration_status" | grep '^opencode:' || true)"
+	if [[ "$opencode_status" =~ ^opencode:[[:space:]]*current([[:space:]]|\(|$) ]]; then
+		echo "  Herdr OpenCode integration is current"
+		return 0
+	fi
+
+	echo "  Installing Herdr's user-level OpenCode integration..."
+	if ! herdr integration install opencode; then
+		echo -e "${RED}Failed to install the Herdr OpenCode integration.${NC}" >&2
+		return 1
+	fi
+	echo "  Herdr integration installed"
+}
 
 # Resolve to absolute path
 TARGET_PATH="$(cd "$TARGET_PATH" 2>/dev/null && pwd)" || {
@@ -162,6 +273,24 @@ else
 	else
 		echo -e "  ${GREEN}✓ Using GitHub Application authentication${NC}"
 	fi
+fi
+
+if [ -z "$HERDR_MODE" ]; then
+	read -p "  Use Herdr for persistent phase agents and worktrees? [y/N] " -r herdr_choice || true
+	if [[ "$herdr_choice" =~ ^[Yy]$ ]]; then
+		HERDR_MODE=true
+	else
+		HERDR_MODE=false
+	fi
+fi
+
+if [ "$HERDR_MODE" = true ]; then
+	echo -e "  ${GREEN}✓ Using Herdr runtime${NC}"
+	if ! validate_herdr; then
+		exit 1
+	fi
+else
+	echo -e "  ${GREEN}✓ Using native OpenCode runtime${NC}"
 fi
 
 # Validate --pem is only used with app auth
@@ -284,21 +413,46 @@ else
 fi
 
 # Check if .opencode already exists
+MENU_INSTALLED=false
 if [ -d "$TARGET_PATH/.opencode" ]; then
 	echo -e "  ${YELLOW}Old menu found in kitchen${NC}"
 	read -p "  Replace with new menu? [y/N] " -n 1 -r
 	echo
 	if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 		echo "  Keeping old menu"
+		if [ "$HERDR_MODE" = true ]; then
+			echo -e "${YELLOW}Herdr was not configured. Rerun init and replace the existing .opencode menu to enable it.${NC}" >&2
+			exit 1
+		fi
 	else
 		mkdir -p "$TARGET_PATH/.opencode"
 		cp -R "$OPENCODE_SOURCE/.opencode/." "$TARGET_PATH/.opencode/"
+		MENU_INSTALLED=true
 		echo -e "  ${GREEN}✓ New menu hung${NC}"
 	fi
 else
 	mkdir -p "$TARGET_PATH/.opencode"
 	cp -R "$OPENCODE_SOURCE/.opencode/." "$TARGET_PATH/.opencode/"
+	MENU_INSTALLED=true
 	echo -e "  ${GREEN}✓ Menu hung${NC}"
+fi
+
+if [ "$MENU_INSTALLED" = true ]; then
+	if [ "$HERDR_MODE" = true ]; then
+		install_herdr_skill
+		install_herdr_opencode_integration
+		cat > "$TARGET_PATH/.opencode/bbq-config.json" <<'EOF'
+{
+  "runtime": "herdr"
+}
+EOF
+	else
+		cat > "$TARGET_PATH/.opencode/bbq-config.json" <<'EOF'
+{
+  "runtime": "native"
+}
+EOF
+	fi
 fi
 
 cp "$WORKFLOW_SCRIPT_SOURCE" "$WORKFLOW_SCRIPT_TARGET"
@@ -390,10 +544,18 @@ echo -e "${GREEN}╚════════════════════
 echo ""
 echo -e "  Kitchen ready at: ${GREEN}$TARGET_PATH${NC}"
 echo -e "  Auth method: ${CYAN}$AUTH_METHOD${NC}"
+if [ "$HERDR_MODE" = true ]; then
+	echo -e "  Runtime: ${CYAN}herdr${NC}"
+else
+	echo -e "  Runtime: ${CYAN}native${NC}"
+fi
 echo ""
 echo -e "${BLUE}  Next steps:${NC}"
 echo ""
-if [ "$SKIP_ENV" = false ]; then
+if [ "$HERDR_MODE" = true ]; then
+	echo "    1. cd $TARGET_PATH && herdr"
+	echo "    2. Start opencode in the Herdr pane, or run ./bbq-orchestrate.sh <ticket-id> from a Herdr shell pane"
+elif [ "$SKIP_ENV" = false ]; then
 	echo "    1. Stock the pantry (see ingredients above)"
 	echo "    2. source ~/.zshenv"
 	echo "    3. cd $TARGET_PATH && opencode"

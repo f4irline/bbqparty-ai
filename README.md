@@ -91,6 +91,14 @@ bbqparty/
 ./init.sh /path/to/your/project
 ```
 
+To opt into [Herdr](https://github.com/herdrdev/herdr) for persistent phase agents and worktree workspaces:
+
+```bash
+./init.sh /path/to/your/project --herdr
+```
+
+Herdr is optional and the interactive choice defaults to No. BBQ Party never installs or updates the Herdr binary. When selected, `init.sh` requires Herdr v0.9.0 or newer, downloads the matching official Herdr skill, and installs or repairs Herdr's user-level OpenCode integration when needed.
+
 The init script will ask you to choose an authentication method:
 
 | Method | Best For | Identity |
@@ -304,6 +312,14 @@ Run multiple tickets at once without branch checkout collisions:
 - Clean up stale worktrees with `git worktree remove <path>` and `git worktree prune`
 - Local-only files (for example `.env`) are mirrored using `.opencode/worktree-local-files`
 - `init.sh` auto-discovers `.env`, `.env.local`, `.env.development`, and `.env.test` paths and maps them by exact repo-relative location
+
+### Optional Herdr Runtime
+
+Installed projects select their runtime in `.opencode/bbq-config.json`. `native` is the default. A `herdr` project uses Herdr only inside a Herdr pane (`HERDR_ENV=1`); outside Herdr, BBQ Party prints a fallback notice and continues with native OpenCode orchestration and Git worktrees.
+
+In an active Herdr pane, every pantry, prep, and fire phase receives its own retained OpenCode agent and tab. The runner prints `herdr agent attach <name>` for blocked and completed agents, while preserving command responses and transcripts under `.opencode/.bbq-runs/`.
+
+Herdr worktrees use the same project-local `.opencode/.bbq-worktrees/{branch-slug}` layout and local-file mirroring as native worktrees. Clean up a Herdr workspace with `herdr worktree remove --workspace <workspace-id>`; this never deletes the branch and dirty worktrees require explicit `--force`.
 
 ---
 

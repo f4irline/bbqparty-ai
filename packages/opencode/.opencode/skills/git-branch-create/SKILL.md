@@ -7,7 +7,7 @@ description: Resolve a properly named git branch from a Linear ticket ID followi
 
 Resolve a ticket branch name following the project's naming convention.
 
-In parallel workflows, branch creation should happen through a dedicated worktree (via `git-worktree-prepare`), not by checking out directly in the current tree.
+In parallel workflows, the caller-selected worktree provider creates the checkout. Do not check out directly in the current tree.
 
 ## Branch Format
 
@@ -52,9 +52,9 @@ In parallel workflows, branch creation should happen through a dedicated worktre
    - Do not run `git checkout -b` in the active workspace
    - Return the constructed branch name to the caller
 
-6. **Handoff to worktree flow**:
-   - The caller should run `git-worktree-prepare` with the constructed branch name
-   - Let that skill create/reuse the actual branch checkout
+6. **Return to the caller-selected worktree provider**:
+    - Return the constructed branch name without naming a provider
+    - The caller selects Herdr when active or the native `git-worktree-prepare` fallback
 
 ## Examples
 

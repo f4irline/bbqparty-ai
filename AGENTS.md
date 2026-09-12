@@ -28,6 +28,7 @@ If any of these files appear later, treat them as additional constraints.
 ./init.sh /path/to/target-project
 ./init.sh /path/to/target-project --auth-method pat
 ./init.sh /path/to/target-project --auth-method app --pem /path/to/key.pem
+./init.sh /path/to/target-project --herdr
 ```
 
 ### GitHub App MCP server (`mcp/github-app`)
@@ -58,6 +59,15 @@ docker run --rm -i \
 Single-test execution (important):
 ```bash
 pnpm test -- path/to/file.test.ts
+```
+
+Shell integration verification:
+```bash
+bash test/init-herdr.test.sh
+bash packages/opencode/test/worktree-local-files.test.sh
+bash packages/opencode/test/worktree-provider-contract.test.sh
+bash packages/opencode/test/bbq-orchestrate.test.sh
+bash packages/opencode/test/bbq-orchestrate-herdr.test.sh
 ```
 
 ## Code Style Guidelines

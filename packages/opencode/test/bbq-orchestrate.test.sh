@@ -510,3 +510,100 @@ if [ "$(<"$temp_dir/server-stop")" != "stopped" ]; then
   printf '%s\n' "Runner did not stop its local OpenCode server after starting at fire" >&2
   exit 1
 fi
+
+mkdir -p "$temp_dir/no-runtime-config" "$temp_dir/native-runtime-config/.opencode" "$temp_dir/invalid-runtime-config/.opencode" "$temp_dir/unknown-runtime-config/.opencode" "$temp_dir/herdr-runtime-config/.opencode"
+cp "$runner" "$temp_dir/no-runtime-config/bbq-orchestrate.sh"
+cp "$runner" "$temp_dir/native-runtime-config/bbq-orchestrate.sh"
+cp "$runner" "$temp_dir/invalid-runtime-config/bbq-orchestrate.sh"
+cp "$runner" "$temp_dir/unknown-runtime-config/bbq-orchestrate.sh"
+cp "$runner" "$temp_dir/herdr-runtime-config/bbq-orchestrate.sh"
+chmod +x "$temp_dir/no-runtime-config/bbq-orchestrate.sh" "$temp_dir/native-runtime-config/bbq-orchestrate.sh" "$temp_dir/invalid-runtime-config/bbq-orchestrate.sh" "$temp_dir/unknown-runtime-config/bbq-orchestrate.sh" "$temp_dir/herdr-runtime-config/bbq-orchestrate.sh"
+printf '%s\n' '{"runtime":"native"}' > "$temp_dir/native-runtime-config/.opencode/bbq-config.json"
+printf '%s\n' '{broken' > "$temp_dir/invalid-runtime-config/.opencode/bbq-config.json"
+printf '%s\n' '{"runtime":"unknown"}' > "$temp_dir/unknown-runtime-config/.opencode/bbq-config.json"
+printf '%s\n' '{"runtime":"herdr"}' > "$temp_dir/herdr-runtime-config/.opencode/bbq-config.json"
+
+rm -f "$temp_dir/server-stop" "$temp_dir/session-counter"
+OPENCODE_CALL_LOG="$temp_dir/no-config-calls" \
+OPENCODE_CURL_CALL_LOG="$temp_dir/no-config-curl-calls" \
+OPENCODE_SERVER_STOP_LOG="$temp_dir/server-stop" \
+OPENCODE_SESSION_COUNTER="$temp_dir/session-counter" \
+OPENCODE_PORT_EXPECTED=48123 \
+PATH="$temp_dir/bin:$PATH" \
+BBQ_OPENCODE_PORT=48123 \
+BBQ_ORCHESTRATE_RUN_ROOT="$temp_dir/runs" \
+  "$temp_dir/no-runtime-config/bbq-orchestrate.sh" --start-phase fire STU-15 > /dev/null
+if [ ! -s "$temp_dir/no-config-calls" ]; then
+  printf '%s\n' "Missing runtime config did not use the native backend" >&2
+  exit 1
+fi
+
+rm -f "$temp_dir/server-stop" "$temp_dir/session-counter"
+OPENCODE_CALL_LOG="$temp_dir/native-config-calls" \
+OPENCODE_CURL_CALL_LOG="$temp_dir/native-config-curl-calls" \
+OPENCODE_SERVER_STOP_LOG="$temp_dir/server-stop" \
+OPENCODE_SESSION_COUNTER="$temp_dir/session-counter" \
+OPENCODE_PORT_EXPECTED=48123 \
+PATH="$temp_dir/bin:$PATH" \
+BBQ_OPENCODE_PORT=48123 \
+BBQ_ORCHESTRATE_RUN_ROOT="$temp_dir/runs" \
+  "$temp_dir/native-runtime-config/bbq-orchestrate.sh" --start-phase fire STU-15 > /dev/null
+if [ ! -s "$temp_dir/native-config-calls" ]; then
+  printf '%s\n' "Explicit native runtime config did not use the native backend" >&2
+  exit 1
+fi
+
+if OPENCODE_CALL_LOG="$temp_dir/invalid-config-calls" \
+OPENCODE_CURL_CALL_LOG="$temp_dir/invalid-config-curl-calls" \
+OPENCODE_SERVER_STOP_LOG="$temp_dir/server-stop" \
+OPENCODE_SESSION_COUNTER="$temp_dir/session-counter" \
+OPENCODE_PORT_EXPECTED=48123 \
+PATH="$temp_dir/bin:$PATH" \
+BBQ_OPENCODE_PORT=48123 \
+BBQ_ORCHESTRATE_RUN_ROOT="$temp_dir/runs" \
+  "$temp_dir/invalid-runtime-config/bbq-orchestrate.sh" --start-phase fire STU-15 > /dev/null 2>&1; then
+  printf '%s\n' "Runner accepted malformed runtime configuration" >&2
+  exit 1
+fi
+if [ -e "$temp_dir/invalid-config-calls" ]; then
+  printf '%s\n' "Runner started OpenCode with malformed runtime configuration" >&2
+  exit 1
+fi
+
+if OPENCODE_CALL_LOG="$temp_dir/unknown-config-calls" \
+OPENCODE_CURL_CALL_LOG="$temp_dir/unknown-config-curl-calls" \
+OPENCODE_SERVER_STOP_LOG="$temp_dir/server-stop" \
+OPENCODE_SESSION_COUNTER="$temp_dir/session-counter" \
+OPENCODE_PORT_EXPECTED=48123 \
+PATH="$temp_dir/bin:$PATH" \
+BBQ_OPENCODE_PORT=48123 \
+BBQ_ORCHESTRATE_RUN_ROOT="$temp_dir/runs" \
+  "$temp_dir/unknown-runtime-config/bbq-orchestrate.sh" --start-phase fire STU-15 > /dev/null 2>&1; then
+  printf '%s\n' "Runner accepted an unknown runtime configuration" >&2
+  exit 1
+fi
+if [ -e "$temp_dir/unknown-config-calls" ]; then
+  printf '%s\n' "Runner started OpenCode with an unknown runtime configuration" >&2
+  exit 1
+fi
+
+rm -f "$temp_dir/server-stop" "$temp_dir/session-counter"
+OPENCODE_CALL_LOG="$temp_dir/herdr-fallback-calls" \
+OPENCODE_CURL_CALL_LOG="$temp_dir/herdr-fallback-curl-calls" \
+OPENCODE_SERVER_STOP_LOG="$temp_dir/server-stop" \
+OPENCODE_SESSION_COUNTER="$temp_dir/session-counter" \
+OPENCODE_PORT_EXPECTED=48123 \
+PATH="$temp_dir/bin:$PATH" \
+BBQ_OPENCODE_PORT=48123 \
+BBQ_ORCHESTRATE_RUN_ROOT="$temp_dir/runs" \
+  "$temp_dir/herdr-runtime-config/bbq-orchestrate.sh" --start-phase fire STU-15 > "$temp_dir/herdr-fallback-output"
+if ! rg --fixed-strings --quiet "Herdr runtime is configured but this is not a Herdr pane" "$temp_dir/herdr-fallback-output"; then
+  printf '%s\n' "Herdr runtime fallback notice was not printed" >&2
+  exit 1
+fi
+if [ ! -s "$temp_dir/herdr-fallback-calls" ]; then
+  printf '%s\n' "Herdr runtime without Herdr context did not use the HTTP backend" >&2
+  exit 1
+fi
+
+printf '%s\n' 'PASS: native orchestration'

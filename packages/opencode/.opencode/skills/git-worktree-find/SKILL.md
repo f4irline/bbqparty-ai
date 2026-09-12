@@ -5,7 +5,7 @@ description: Find the worktree path for a branch and create/reuse it when missin
 
 # Git Worktree Find
 
-Resolve the worktree path for a ticket branch. If a worktree does not exist yet, create it using `git-worktree-prepare`.
+Resolve the worktree path for a ticket branch using the native Git provider. If a worktree does not exist yet, create it using the native fallback `git-worktree-prepare`. Herdr-configured projects use this skill only outside an active Herdr pane.
 
 Use shell-safe parsing compatible with bash/zsh and avoid `status` as a variable name.
 

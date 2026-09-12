@@ -8,6 +8,7 @@ This is the portable OpenCode configuration for BBQ Party. Drop it into any proj
 ```bash
 # From bbqparty root
 ./init.sh /path/to/your/project --pem /path/to/key.pem
+./init.sh /path/to/your/project --herdr
 ```
 
 **Option B: Manual copy**
@@ -97,6 +98,12 @@ script runs the selected phase and every later phase:
 
 The script runs pantry, prep, and fire serially in the user’s terminal. It starts a loopback-only OpenCode server and prints a command for attaching the OpenCode TUI to each active phase. Run that command in another terminal when the agent needs an answer; the phase resumes in the same session and the script continues after its result marker. Each phase retains its existing review gate and status transitions. The script stops when a phase is blocked, fails, or emits no valid result marker, and stores its session and command response logs under `.opencode/.bbq-runs/`.
 
+### Optional Herdr Runtime
+
+`.opencode/bbq-config.json` selects `native` (the default) or `herdr`. Select Herdr during `init.sh` with `--herdr`, or answer Yes to its prompt. BBQ Party does not install Herdr; it validates a v0.9.0-or-newer CLI, downloads that exact version's official skill, and may update Herdr's user-level OpenCode integration.
+
+With `runtime: "herdr"`, run the script from a Herdr shell pane (`HERDR_ENV=1`). Each selected phase gets a separate retained tab and OpenCode agent. Before submitting a `/bbq.*` command, the runner waits three seconds for OpenCode to initialize its project command registry. Set `BBQ_HERDR_COMMAND_READY_DELAY_SECONDS` to a non-negative integer to adjust that delay. The runner emits `herdr agent attach <name>` after completion or when a phase blocks, and keeps JSON responses and plain transcripts in `.opencode/.bbq-runs/` for inspection. Without `HERDR_ENV=1`, it announces native fallback and runs the existing loopback OpenCode backend.
+
 To use an existing loopback server instead, set `BBQ_OPENCODE_URL`; the script will not start or stop that server:
 
 ```bash
@@ -142,6 +149,8 @@ docs/learnings/
 - Local-only file sync list lives in `.opencode/worktree-local-files`
 - `init.sh` auto-discovers common `.env*` files and appends exact repo-relative mappings
 - Cleanup: remove old stations with `git worktree remove <path>` and `git worktree prune`
+
+When Herdr is active, it creates or opens the same deterministic worktree path and runs the same local-file sync helper. Remove the associated workspace with `herdr worktree remove --workspace <workspace-id>`; it does not delete the branch and requires `--force` for a dirty worktree.
 
 ## House Rules
 
