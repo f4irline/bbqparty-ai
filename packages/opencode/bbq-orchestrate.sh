@@ -110,14 +110,16 @@ evaluate_phase_result() {
   local phase="$1"
   local text_file="$2"
   local log_file="$3"
-  local result_line
+  local result_line normalized_result_line
   local phase_result=""
   local result_count=0
 
   while IFS= read -r result_line; do
-    case "$result_line" in
+    normalized_result_line="${result_line#"${result_line%%[![:space:]]*}"}"
+    normalized_result_line="${normalized_result_line%"${normalized_result_line##*[![:space:]]}"}"
+    case "$normalized_result_line" in
       "BBQ_PHASE_RESULT: COMPLETE"|"BBQ_PHASE_RESULT: BLOCKED"|"BBQ_PHASE_RESULT: FAILED")
-        phase_result="$result_line"
+        phase_result="$normalized_result_line"
         result_count=$((result_count + 1))
         ;;
     esac

@@ -152,6 +152,9 @@ if ! [[ "$first_name" =~ ^[a-z][a-z0-9_-]{0,31}$ ]] || [ "$first_name" = "$secon
 fi
 
 rm -f "$temp_dir/calls" "$temp_dir/tab-counter"
+HERDR_TRANSCRIPT='      BBQ_PHASE_RESULT: COMPLETE    ' run_herdr --start-phase fire STU-15 > /dev/null
+
+rm -f "$temp_dir/calls" "$temp_dir/tab-counter"
 if HERDR_TRANSCRIPT=$'BBQ_PHASE_RESULT: COMPLETE\nBBQ_PHASE_RESULT: FAILED' run_herdr --start-phase fire STU-15 > /dev/null 2>&1; then
   printf '%s\n' 'Herdr workflow accepted conflicting result markers' >&2
   exit 1
