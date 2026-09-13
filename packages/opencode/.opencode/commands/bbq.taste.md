@@ -18,28 +18,31 @@ Follow these steps:
 
 ## Setup
 
+**Mandatory House Rules Gate:**
+- Before doing repository work, capture the launching checkout with `git rev-parse --show-toplevel` as `workflow_root` and initially set `worktree_path` to the same value.
+- Use the Read tool directly on `{workflow_root}/.opencode/HOUSE_RULES.md`.
+- Do not use Glob, Grep, or directory listing to locate or test this known path.
+- Treat the loaded rules as binding for the entire workflow; do not require or load a copy from the ticket worktree.
+- If the direct read fails, stop with `BBQ_PHASE_RESULT: FAILED` and report the read error.
+- If any requested change conflicts with House Rules, call it out and request explicit exception handling.
+
 1. Use the git-find-ticket-branch skill to find the branch for this ticket.
-2. Resolve the worktree provider after resolving `repo_root`, `branch_name`, and the remote default branch:
+2. Resolve the worktree provider after resolving `workflow_root`, `branch_name`, and the remote default branch:
     - Read `.opencode/bbq-config.json` with `jq`. A missing file means `runtime == "native"`. Invalid JSON or any runtime other than `native` or `herdr` is an actionable error; do not guess a provider.
     - Use Herdr only when `runtime == "herdr"` **and** `HERDR_ENV=1`. In that case explicitly load and follow the installed `herdr` skill before running its CLI commands.
-    - With active Herdr, run `herdr worktree list --cwd "{repo-root}"` and inspect its JSON `.result.worktrees` for the matching branch.
-    - If the matching checkout has no `open_workspace_id`, run `herdr worktree open --cwd "{repo-root}" --branch "{branch-name}" --label "{ticket-id}" --no-focus` and retain `.result.workspace.workspace_id` as metadata only.
-    - If no checkout exists, use the deterministic absolute `.opencode/.bbq-worktrees/{branch-slug}` path. Use `origin/{branch-name}` as the base when only a remote ticket branch exists; otherwise use the resolved remote default branch. Run `herdr worktree create --cwd "{repo-root}" --branch "{branch-name}" --base "{base-ref}" --path "{worktree-path}" --label "{ticket-id}" --no-focus`.
+    - With active Herdr, run `herdr worktree list --cwd "{workflow_root}"` and inspect its JSON `.result.worktrees` for the matching branch.
+    - If the matching checkout has no `open_workspace_id`, run `herdr worktree open --cwd "{workflow_root}" --branch "{branch-name}" --label "{ticket-id}" --no-focus` and retain `.result.workspace.workspace_id` as metadata only.
+    - If no checkout exists, use the deterministic absolute `.opencode/.bbq-worktrees/{branch-slug}` path. Use `origin/{branch-name}` as the base when only a remote ticket branch exists; otherwise use the resolved remote default branch. Run `herdr worktree create --cwd "{workflow_root}" --branch "{branch-name}" --base "{base-ref}" --path "{worktree-path}" --label "{ticket-id}" --no-focus`.
     - Parse the authoritative checkout path from `.result.worktree.path` or its matching `.result.worktrees` entry, never from `.result.workspace.workspace_id`.
     - If Herdr is configured but `HERDR_ENV=1` is absent, state that native fallback is active and use `git-worktree-find`. It may call the native fallback `git-worktree-prepare` skill when the checkout is missing.
-    - Under either provider, run `"{repo-root}/.opencode/scripts/sync-worktree-local-files.sh" "{repo-root}" "{worktree-path}"` after resolving the path. Capture outputs as `branch_name` and `worktree_path`.
+    - Under either provider, run `"{workflow_root}/.opencode/scripts/sync-worktree-local-files.sh" "{workflow_root}" "{worktree-path}"` after resolving the path. Capture outputs as `workflow_root`, `branch_name`, and `worktree_path`.
 3. From this point forward, run all git/code actions in the resolved worktree path
    - Prefer explicit path-aware commands (`git -C "{worktree_path}" ...`) when possible
-   - Do not rely on current working directory after worktree resolution
+   - Do not rely on the process current directory; this applies whether `worktree_path` is the root checkout or a dedicated worktree
 4. Pull the latest changes in that worktree and resolve any conflicts (ask for help if conflicts are complex)
 5. **Check for existing progress doc** at `docs/progress/{branch-name}.md` in that worktree
     - If it exists, read it and check the Workflow Checklist for current status
     - If not, create one using the progress-doc skill with a review-specific workflow checklist (see below)
-
-**House Rules Gate (always):**
-- Check if `.opencode/HOUSE_RULES.md` exists.
-- If it exists, read it before making review fixes and treat it as binding.
-- If any requested change conflicts with House Rules, call it out and request explicit exception handling.
 
 ## Address Review Comments (Phase 1: Implementation)
 

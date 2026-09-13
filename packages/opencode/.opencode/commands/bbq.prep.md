@@ -9,10 +9,11 @@ Parse the input: `$ARGUMENTS`
 
 You are planning the technical implementation for the ticket. If additional context was provided, factor it into your planning.
 
-Before planning, check if `.opencode/HOUSE_RULES.md` exists:
-- If it exists, read it first and treat it as mandatory constraints.
-- Use it to shape the design, test strategy, and governance notes.
-- If it does not exist, continue with the default planning workflow.
+Before planning, use the Read tool directly on `.opencode/HOUSE_RULES.md`:
+- Do not use Glob, Grep, or directory listing to locate or test this known path.
+- Treat the loaded rules as mandatory constraints.
+- Use them to shape the design, test strategy, and governance notes.
+- If the direct read fails, stop with `BBQ_PHASE_RESULT: FAILED` and report the read error.
 
 Follow these steps:
 
@@ -73,7 +74,7 @@ Follow these steps:
    [List any breaking changes or "None"]
 
    ### House Rules Alignment
-   [How this plan follows `.opencode/HOUSE_RULES.md`, required exceptions with rationale, or "No HOUSE_RULES file found"]
+   [How this plan follows `.opencode/HOUSE_RULES.md`, required exceptions with rationale, or "No exceptions required"]
 
    ### Learnings to Apply
    [Relevant learnings from docs/learnings/ or "None identified"]

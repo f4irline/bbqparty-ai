@@ -8,10 +8,11 @@ Parse the input: `$ARGUMENTS`
 
 Show the current status of the ticket across all systems. If additional context was provided, keep it in mind.
 
-Before gathering status, check if `.opencode/HOUSE_RULES.md` exists:
-- If it exists, read it first and treat it as governing guidance for this workflow.
-- Use it to flag any obvious compliance risks or required exceptions visible from ticket, branch, or PR context.
-- If it does not exist, continue normally.
+Before gathering status, use the Read tool directly on `.opencode/HOUSE_RULES.md`:
+- Do not use Glob, Grep, or directory listing to locate or test this known path.
+- Treat the loaded rules as governing guidance for this workflow.
+- Use them to flag any obvious compliance risks or required exceptions visible from ticket, branch, or PR context.
+- If the direct read fails, stop and report the read error.
 
 Gather and display:
 
@@ -30,8 +31,8 @@ Gather and display:
    - PR status (open, merged, closed)
    - Review status (approved, changes requested, pending)
    - Open comments count
-4. If House Rules are present:
+4. For House Rules:
    - Include a brief compliance snapshot
    - Call out any item that appears to need an exception or governance review
 
-Present a clear summary of where this ticket stands in the workflow, including House Rules signals when available.
+Present a clear summary of where this ticket stands in the workflow, including House Rules compliance signals.

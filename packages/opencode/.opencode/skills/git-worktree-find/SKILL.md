@@ -15,7 +15,14 @@ Use shell-safe parsing compatible with bash/zsh and avoid `status` as a variable
 
 ## Steps
 
-1. Find existing worktree assignment for the branch:
+1. Capture the launching checkout before resolving another worktree:
+   ```bash
+   workflow_root="$(git rev-parse --show-toplevel)"
+   ```
+   Keep this value unchanged. Workflow control files, including House Rules,
+   remain anchored to this checkout.
+
+2. Find existing worktree assignment for the branch:
    ```bash
    existing_path=""
    current_path=""
@@ -35,17 +42,19 @@ Use shell-safe parsing compatible with bash/zsh and avoid `status` as a variable
    done < <(git worktree list --porcelain)
    ```
 
-2. If found:
+3. If found:
    - Return the existing worktree path
-   - Return worktree state `reused`
+   - Return the captured workflow root
+   - If the path equals `workflow_root`, return worktree state `root`; use it instead of creating a dedicated worktree
+   - Otherwise return worktree state `reused`
    - Stop
 
-3. If not found:
+4. If not found:
    - Call `git-worktree-prepare` for the same branch
    - This also applies local-file sync from `.opencode/worktree-local-files`
-   - Return the newly created path and worktree state `created`
+   - Return the workflow root, newly created path, and worktree state `created`
 
-4. Verify branch in resolved worktree:
+5. Verify branch in resolved worktree:
    ```bash
    git -C "{worktree-path}" branch --show-current
    ```
@@ -55,9 +64,10 @@ Use shell-safe parsing compatible with bash/zsh and avoid `status` as a variable
 Return:
 
 ```text
+Workflow root: <absolute-path>
 Branch: <branch>
 Worktree: <absolute-path>
-Worktree state: <created|reused>
+Worktree state: <root|created|reused>
 ```
 
 ## Error Handling

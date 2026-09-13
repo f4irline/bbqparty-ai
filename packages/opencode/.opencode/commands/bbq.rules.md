@@ -8,11 +8,12 @@ Create or update the project's House Rules document that defines core principles
 
 ## Instructions
 
-### 1. Check for Existing House Rules
+### 1. Read Existing House Rules
 
-Check if `.opencode/HOUSE_RULES.md` already exists:
-- If it exists, read it and offer to update/extend it
-- If not, copy the template from `.opencode/templates/HOUSE_RULES.md`
+Use the Read tool directly on `.opencode/HOUSE_RULES.md`:
+- Do not use Glob, Grep, or directory listing to locate or test this known path.
+- If the read succeeds, offer to update or extend the document.
+- Only if Read returns a file-not-found error, read `.opencode/templates/HOUSE_RULES.md` directly and use it as the starting template.
 
 ### 2. Gather Project Context
 
@@ -87,5 +88,5 @@ Principles documented:
 
 These rules will guide all development in this project.
 
-All `/bbq.*` commands will load and apply these rules when this file is present.
+All `/bbq.*` commands will load and apply these rules directly.
 ```

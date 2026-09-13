@@ -40,10 +40,13 @@ worktree: /Users/me/projects/my-repo/.opencode/.bbq-worktrees/feat-STU-15-user-a
 
 ## Steps
 
-1. Resolve repository context:
+1. Resolve and retain the launching checkout as workflow context:
    ```bash
-   git rev-parse --show-toplevel
+   workflow_root="$(git rev-parse --show-toplevel)"
    ```
+   Keep `workflow_root` unchanged after the ticket worktree is created. Workflow
+   control files, including `.opencode/HOUSE_RULES.md`, are read from this
+   checkout rather than from the ticket worktree.
 
 2. Resolve default branch from remote HEAD (do not hardcode `main`):
    ```bash
@@ -78,15 +81,15 @@ worktree: /Users/me/projects/my-repo/.opencode/.bbq-worktrees/feat-STU-15-user-a
    If found, return that path with worktree state `reused` and stop.
 
 4. Build deterministic worktree path:
-   - Resolve `repo_root` from `git rev-parse --show-toplevel`
-   - Set `worktree_root="$repo_root/.opencode/.bbq-worktrees"`
+   - Use the `workflow_root` resolved in step 1 as `repo_root`
+   - Set `worktree_root="$workflow_root/.opencode/.bbq-worktrees"`
    - Replace `/` with `-` in branch name for directory name
    - Create parent directories as needed
 
    Example extraction flow:
    ```bash
-   repo_root="$(git rev-parse --show-toplevel)"
-   worktree_root="$repo_root/.opencode/.bbq-worktrees"
+   repo_root="$workflow_root"
+   worktree_root="$workflow_root/.opencode/.bbq-worktrees"
    branch_slug="${branch//\//-}"
    worktree_path="$worktree_root/$branch_slug"
    ```
@@ -113,8 +116,8 @@ worktree: /Users/me/projects/my-repo/.opencode/.bbq-worktrees/feat-STU-15-user-a
 7. Sync local-only files/directories from the source checkout with the native fallback provider's shared helper:
 
     ```bash
-    "{repo-root}/.opencode/scripts/sync-worktree-local-files.sh" \
-      "{repo-root}" \
+    "{workflow_root}/.opencode/scripts/sync-worktree-local-files.sh" \
+      "{workflow_root}" \
       "{worktree-path}"
     ```
 
@@ -125,6 +128,7 @@ worktree: /Users/me/projects/my-repo/.opencode/.bbq-worktrees/feat-STU-15-user-a
 Return:
 
 ```text
+Workflow root: <absolute-path>
 Branch: <branch>
 Worktree: <absolute-path>
 Worktree state: <created|reused>

@@ -19,30 +19,33 @@ Follow these steps:
 
 ## Before Cooking
 
+**Mandatory House Rules Gate:**
+- Before doing repository work, capture the launching checkout with `git rev-parse --show-toplevel` as `workflow_root` and initially set `worktree_path` to the same value.
+- Use the Read tool directly on `{workflow_root}/.opencode/HOUSE_RULES.md`.
+- Do not use Glob, Grep, or directory listing to locate or test this known path.
+- Treat the loaded rules as binding for the entire workflow; do not require or load a copy from the ticket worktree.
+- If the direct read fails, stop with `BBQ_PHASE_RESULT: FAILED` and report the read error.
+- Track any required exception explicitly in progress documentation.
+
 1. Move the ticket to "In Progress" status using Linear MCP
 2. Read the full ticket details from Linear, including research and planning comments
 3. **Check the pantry for learnings**: If `docs/learnings/` exists, scan all files for learnings relevant to this ticket's domain. Keep these in mind during implementation.
 
-**House Rules Gate (always):**
-- Check if `.opencode/HOUSE_RULES.md` exists.
-- If it exists, read it before writing code and treat it as binding for implementation choices, testing, and PR scope.
-- Track any required exception explicitly in progress documentation.
-
 4. Ask clarifying questions if anything is unclear before starting
 5. Use the `git-branch-create` skill to resolve a properly named ticket branch. It returns the branch to the caller-selected worktree provider.
-6. Resolve the worktree provider after resolving `repo_root`, `branch_name`, and the remote default branch:
+6. Resolve the worktree provider after resolving `workflow_root`, `branch_name`, and the remote default branch:
     - Read `.opencode/bbq-config.json` with `jq`. A missing file means `runtime == "native"`. Invalid JSON or any runtime other than `native` or `herdr` is an actionable error; do not guess a provider.
     - Use Herdr only when `runtime == "herdr"` **and** `HERDR_ENV=1`. In that case explicitly load and follow the installed `herdr` skill before running its CLI commands.
-    - With active Herdr, confirm the installed CLI syntax, then run `herdr worktree list --cwd "{repo-root}"` and inspect its JSON `.result.worktrees` for the matching branch.
-    - When the matching checkout exists but has no `open_workspace_id`, open it without focus: `herdr worktree open --cwd "{repo-root}" --branch "{branch-name}" --label "{ticket-id}" --no-focus`. Parse `.result.workspace.workspace_id` only as workspace metadata.
-    - When no checkout exists, compute the deterministic absolute `.opencode/.bbq-worktrees/{branch-slug}` path. Use `origin/{branch-name}` as the base when only a remote ticket branch exists; otherwise use the resolved remote default branch. Run `herdr worktree create --cwd "{repo-root}" --branch "{branch-name}" --base "{base-ref}" --path "{worktree-path}" --label "{ticket-id}" --no-focus`.
+    - With active Herdr, confirm the installed CLI syntax, then run `herdr worktree list --cwd "{workflow_root}"` and inspect its JSON `.result.worktrees` for the matching branch.
+    - When the matching checkout exists but has no `open_workspace_id`, open it without focus: `herdr worktree open --cwd "{workflow_root}" --branch "{branch-name}" --label "{ticket-id}" --no-focus`. Parse `.result.workspace.workspace_id` only as workspace metadata.
+    - When no checkout exists, compute the deterministic absolute `.opencode/.bbq-worktrees/{branch-slug}` path. Use `origin/{branch-name}` as the base when only a remote ticket branch exists; otherwise use the resolved remote default branch. Run `herdr worktree create --cwd "{workflow_root}" --branch "{branch-name}" --base "{base-ref}" --path "{worktree-path}" --label "{ticket-id}" --no-focus`.
     - Parse the authoritative checkout path from `.result.worktree.path` (or its matching `.result.worktrees` entry), never from `.result.workspace.workspace_id`.
     - If Herdr is configured but `HERDR_ENV=1` is absent, state that native fallback is active and use the native fallback `git-worktree-prepare` skill.
-    - Under either provider, run `"{repo-root}/.opencode/scripts/sync-worktree-local-files.sh" "{repo-root}" "{worktree-path}"` after resolving the path. Worktree behavior is default-on and paths remain under `.opencode/.bbq-worktrees/`.
-    - Capture outputs as `branch_name` and `worktree_path`. The `git-worktree-find` skill remains the native fallback provider for continued review work in `/bbq.taste`.
+    - Under either provider, run `"{workflow_root}/.opencode/scripts/sync-worktree-local-files.sh" "{workflow_root}" "{worktree-path}"` after resolving the path. Worktree behavior is default-on and paths remain under `.opencode/.bbq-worktrees/`.
+    - Capture outputs as `workflow_root`, `branch_name`, and `worktree_path`. The `git-worktree-find` skill remains the native fallback provider for continued review work in `/bbq.taste`.
 7. From this point forward, run **all git, code, test, and documentation actions in that worktree path**
    - Prefer explicit path-aware commands (`git -C "{worktree_path}" ...`) when possible
-   - Do not rely on current working directory after worktree creation
+   - Do not rely on the process current directory; this applies whether `worktree_path` is the root checkout or a dedicated worktree
 8. Use the `git-push-remote` skill with explicit inputs `worktree_path` and `branch_name`
 
 ## Fire the Grill (Phase 1: Implementation)
@@ -113,7 +116,7 @@ Ensure all tests pass before proceeding.
 
 ## Implementation Review Gate
 
-After implementation and validation are complete, use the Task tool to spawn the `health-inspector` subagent from `worktree_path`. Give it the ticket ID, user context, `worktree_path`, and this task: review the completed implementation and its diff against the full Linear ticket, Technical Plan, House Rules, relevant learnings, and validation results.
+After implementation and validation are complete, use the Task tool to spawn the `health-inspector` subagent from `worktree_path`. Give it the ticket ID, user context, `workflow_root`, `worktree_path`, and this task: review the completed implementation and its diff against the full Linear ticket, Technical Plan, House Rules, relevant learnings, and validation results.
 
 - If it returns `REVIEW_RESULT: PASS`, continue with the Learnings phase.
 - If it returns `REVIEW_RESULT: CHANGES_REQUIRED`, resolve every blocking and important finding in `worktree_path`, update tests and progress documentation as needed, run the relevant validation again, commit the revisions with the git-commit skill, then spawn a fresh `health-inspector` review.

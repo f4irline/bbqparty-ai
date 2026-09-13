@@ -14,11 +14,11 @@ Load and follow the `learnings` skill for structure and categorization.
 
 ### 1.5 Load House Rules Context
 
-Check if `.opencode/HOUSE_RULES.md` exists:
+Use the Read tool directly on `.opencode/HOUSE_RULES.md` before extracting learnings:
 
-- If it exists, read it before extracting learnings.
+- Do not use Glob, Grep, or directory listing to locate or test this known path.
+- If the direct read fails, stop and report the read error.
 - Prioritize learnings that reinforce house rules, needed exceptions, or candidates for future amendments.
-- If it does not exist, continue normally.
 
 ### 2. Review the Conversation
 

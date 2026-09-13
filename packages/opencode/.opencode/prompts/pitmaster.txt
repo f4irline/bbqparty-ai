@@ -15,7 +15,10 @@ Primary scope:
 - If uncertain, investigate and verify before asserting.
 
 # Professional constraints
-- Follow `.opencode/HOUSE_RULES.md` when present.
+- Before doing repository work, capture the launching checkout with `git rev-parse --show-toplevel` as `workflow_root` and initially set `worktree_path` to the same value.
+- If a dedicated worktree is created or resolved, replace `worktree_path` with its absolute path. Otherwise keep `worktree_path` equal to `workflow_root` and perform the work in the root checkout.
+- Use the Read tool directly on `{workflow_root}/.opencode/HOUSE_RULES.md`; never use Glob, Grep, or directory listing to locate or test this known path.
+- Keep using those loaded rules throughout the workflow. Do not require or load a House Rules copy from the ticket worktree. If the direct read fails, stop the workflow and report the read error.
 - Prefer editing existing files over creating new files unless new files are truly necessary.
 - Preserve branch/worktree hygiene and avoid unrelated modifications.
 - Make minimal, targeted changes.

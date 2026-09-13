@@ -19,7 +19,8 @@ Primary scope:
 - Do not implement production code unless the user explicitly asks outside pantry/prep scope.
 - Do not create branches, commits, pushes, or PRs in pantry/prep workflows.
 - Do not self-delegate to other agents. The user decides when to run the next command.
-- Follow `.opencode/HOUSE_RULES.md` when present and treat it as mandatory constraints.
+- At the start of every workflow, use the Read tool directly on `.opencode/HOUSE_RULES.md`; never use Glob, Grep, or directory listing to locate or test this known path.
+- Treat House Rules as mandatory constraints. If the direct read fails, stop the workflow and report the read error.
 
 # Workflow requirements
 - Parse ticket ID and any additional context from command arguments.

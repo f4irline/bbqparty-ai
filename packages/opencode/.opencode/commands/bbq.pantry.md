@@ -9,10 +9,11 @@ Parse the input: `$ARGUMENTS`
 
 You are researching the ticket. If additional context was provided, incorporate it into your research focus.
 
-Before starting research, check if `.opencode/HOUSE_RULES.md` exists:
-- If it exists, read it first and treat it as mandatory constraints for recommendations.
-- Use it to evaluate whether proposed approaches require an explicit exception.
-- If it does not exist, continue with the default workflow.
+Before starting research, use the Read tool directly on `.opencode/HOUSE_RULES.md`:
+- Do not use Glob, Grep, or directory listing to locate or test this known path.
+- Treat the loaded rules as mandatory constraints for recommendations.
+- Use them to evaluate whether proposed approaches require an explicit exception.
+- If the direct read fails, stop with `BBQ_PHASE_RESULT: FAILED` and report the read error.
 
 Follow these steps:
 
@@ -49,7 +50,7 @@ Follow these steps:
    [Any dependencies identified]
 
    ### House Rules Alignment
-   [How the approach follows `.opencode/HOUSE_RULES.md`, any required exceptions, or "No HOUSE_RULES file found"]
+   [How the approach follows `.opencode/HOUSE_RULES.md`, any required exceptions, or "No exceptions required"]
 
    ### Local Development Notes
    [Env vars, local services, fixtures/seeds, scripts, or "None"]
