@@ -218,6 +218,10 @@ install_herdr_opencode_integration() {
 	echo "  Herdr integration installed"
 }
 
+configure_workflow_state_ignore() {
+	bash "$TARGET_PATH/.opencode/scripts/ensure-workflow-state-ignore.sh" "$TARGET_PATH"
+}
+
 # Resolve to absolute path
 TARGET_PATH="$(cd "$TARGET_PATH" 2>/dev/null && pwd)" || {
 	echo -e "${RED}🔥 Kitchen not found: $TARGET_PATH${NC}"
@@ -453,6 +457,7 @@ EOF
 }
 EOF
 	fi
+	configure_workflow_state_ignore
 fi
 
 cp "$WORKFLOW_SCRIPT_SOURCE" "$WORKFLOW_SCRIPT_TARGET"

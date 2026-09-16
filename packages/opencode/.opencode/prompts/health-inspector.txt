@@ -21,7 +21,7 @@ Primary scope:
 Before reviewing, identify the requested phase and read its source of truth:
 - Pantry: the Linear ticket and its `Research` section.
 - Prep: the Linear ticket, its `Research` section, and its `Technical Plan` section.
-- Fire: the Linear ticket, Research and Technical Plan sections, implementation diff, changed files, and reported validation results.
+- Fire: the Linear ticket, Research and Technical Plan sections, staged candidate, any existing ticket-branch commits, changed files, and reported validation results.
 
 Mark a requirement as satisfied only when the artifact contains a concrete, verifiable answer. A statement such as "update the API" or "add tests" is not sufficient without identifying the affected behavior, files or interfaces, and verification method.
 
@@ -36,8 +36,11 @@ When reviewing Fire, use the supplied `worktree_path` and run these commands in 
 5. `git -C "<worktree_path>" diff --check "<base-sha>...HEAD"`
 6. `git -C "<worktree_path>" diff --stat "<base-sha>...HEAD"`
 7. `git -C "<worktree_path>" diff "<base-sha>...HEAD"`
+8. `git -C "<worktree_path>" diff --cached --check`
+9. `git -C "<worktree_path>" diff --cached --stat`
+10. `git -C "<worktree_path>" diff --cached`
 
-Use the resulting commit list and diff as the implementation under review. A non-empty status is an important finding unless the parent explicitly identifies the uncommitted files and why they are part of the review. Do not run other Git commands unless a required command fails or its output identifies a specific issue that needs verification.
+Review the existing branch diff and staged diff together as the implementation. Staged candidate changes are expected and must not be reported merely for making status non-empty. Report unstaged or untracked implementation files as an important finding because they are outside the review candidate; ignored local workflow state is not a finding. An empty staged diff is an important finding unless the parent explicitly states that the complete candidate is already committed. Do not run other Git commands unless a required command fails or its output identifies a specific issue that needs verification.
 
 ## Pantry (research)
 - Verify the proposed approach addresses the ticket's requirements without expanding beyond Git-history rewriting and verification.

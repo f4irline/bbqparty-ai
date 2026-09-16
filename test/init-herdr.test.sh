@@ -62,6 +62,12 @@ run_init() {
 
 target="$temp_dir/herdr-target"
 mkdir -p "$target"
+git -C "$target" init --quiet
+git -C "$target" config user.name 'BBQ Test'
+git -C "$target" config user.email 'bbq-test@example.com'
+printf '%s\n' 'test repository' > "$target/README.md"
+git -C "$target" add README.md
+git -C "$target" commit --quiet -m 'test: initialize repository'
 run_init "$target" --herdr > "$temp_dir/herdr-output"
 
 if ! jq -e '.runtime == "herdr"' "$target/.opencode/bbq-config.json" > /dev/null; then
@@ -77,6 +83,15 @@ fi
 
 if ! rg --fixed-strings --quiet 'Requires HERDR_ENV=1' "$target/.opencode/skills/herdr/SKILL.md"; then
   printf '%s\n' 'Validated Herdr skill was not installed' >&2
+  exit 1
+fi
+
+ticket_worktree="$temp_dir/ticket-worktree"
+git -C "$target" worktree add --quiet -b test-workflow-state "$ticket_worktree" HEAD
+mkdir -p "$ticket_worktree/.opencode/.bbq-state"
+printf '%s\n' 'local workflow state' > "$ticket_worktree/.opencode/.bbq-state/test.md"
+if ! git -C "$ticket_worktree" check-ignore --quiet .opencode/.bbq-state/test.md; then
+  printf '%s\n' 'Installed workflow state was not ignored in a linked worktree' >&2
   exit 1
 fi
 

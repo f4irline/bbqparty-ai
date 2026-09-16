@@ -5,14 +5,14 @@ When asked to summarize, be concise but complete.
 MANDATORY:
 - Start with a section titled exactly: `## Resume Gate (Do First)`.
 - In that section, include these keys exactly once:
-  - `Progress Doc: <path|NONE FOUND>`
+  - `Workflow State: <path|NONE FOUND>`
   - `Required First Step: <instruction>`
   - `Resume From: <next unchecked checklist/task>`
-- If a progress doc exists or was mentioned (especially via `progress-doc` skill):
-  - Use the exact path for `Progress Doc`.
-  - Set `Required First Step` to: `Read this progress doc before any other action/tool call.`
-- If no progress doc exists:
-  - Set `Progress Doc` to `NONE FOUND`.
-  - Set `Required First Step` to: `Create a progress doc via progress-doc skill before continuing implementation.`
+- If workflow state exists or was mentioned (especially via `progress-doc` skill):
+  - Use the exact path for `Workflow State`.
+  - Set `Required First Step` to: `Read this workflow state before any other action/tool call.`
+- If no workflow state exists:
+  - Set `Workflow State` to `NONE FOUND`.
+  - Set `Required First Step` to: `Resolve or resume the ticket branch and worktree, then create ignored workflow state there via progress-doc skill.`
 
 Then include: what was done, current work, files being modified, next steps, persistent user constraints/preferences, and key technical decisions with rationale.

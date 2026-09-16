@@ -66,6 +66,8 @@ Shell integration verification:
 bash test/init-herdr.test.sh
 bash packages/opencode/test/worktree-local-files.test.sh
 bash packages/opencode/test/worktree-provider-contract.test.sh
+bash packages/opencode/test/workflow-commit-contract.test.sh
+bash packages/opencode/test/workflow-state-ignore.test.sh
 bash packages/opencode/test/bbq-orchestrate.test.sh
 bash packages/opencode/test/bbq-orchestrate-herdr.test.sh
 ```

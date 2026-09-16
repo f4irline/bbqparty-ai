@@ -19,6 +19,8 @@ cp bbq-orchestrate.sh /path/to/your/project/
 chmod +x /path/to/your/project/bbq-orchestrate.sh
 ```
 
+Fire and Taste run `.opencode/scripts/ensure-workflow-state-ignore.sh` before creating local state, so manual installations also configure the repository's shared local exclude file for linked worktrees.
+
 Choose an environment variable name for your Linear API key and export the
 key under that name. Replace `YOUR_LINEAR_API_KEY_ENV_VAR` in the copied
 `opencode.json` with the same name so OpenCode can read it:
@@ -57,7 +59,7 @@ export YOUR_GITHUB_PAT_ENV_VAR="github_pat_xxxxx"
 | `git-commit` | Conventional commits with ticket refs |
 | `git-find-ticket-branch` | Find branch by ticket ID |
 | `github-pr-feedback` | Fetch unresolved PR threads and comments |
-| `progress-doc` | Track progress in `docs/progress/` |
+| `progress-doc` | Track resumable state in ignored `.opencode/.bbq-state/` |
 | `learnings` | Manage project learnings in `docs/learnings/` |
 
 ## House Agents
@@ -68,9 +70,9 @@ export YOUR_GITHUB_PAT_ENV_VAR="github_pat_xxxxx"
 | `pitmaster` | Implementation and review-fix agent for `/bbq.fire` and `/bbq.taste` |
 | `health-inspector` | Independent review subagent for research, plans, and implementations |
 
-## The Health Inspector (Plugins)
+## Quality Gates
 
-- **validate-changes** — Auto-runs lint/build/test after commits
+- `/bbq.fire` runs project validation, stages the complete candidate, and asks `health-inspector` to review it before creating a commit.
 
 ## Order Flow (Linear Statuses)
 
@@ -139,6 +141,10 @@ docs/learnings/
 - `/bbq.pantry`, `/bbq.prep`, `/bbq.fire` read learnings before starting work
 - `/bbq.pantry`, `/bbq.prep`, `/bbq.fire` each run an independent review gate, with up to three review-and-revision rounds
 - All `/bbq.*` commands apply `.opencode/HOUSE_RULES.md` when it exists
+
+Implementation workflow state is local bookkeeping under ignored `.opencode/.bbq-state/`; it is never committed. `/bbq.fire` stages and reviews the complete candidate before committing, while related tests and durable learnings ship with the implementation they describe. `/bbq.taste` normally creates one coherent commit per review pass rather than one commit per comment.
+
+`init.sh` also adds `/.opencode/.bbq-state/` to the repository's local Git exclude file so state remains ignored in ticket worktrees even before the installed OpenCode configuration is committed.
 
 ## Parallel Worktrees (Default)
 

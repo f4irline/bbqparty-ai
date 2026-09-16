@@ -60,7 +60,11 @@ Optional, indicates the component affected:
    - This returns the bot/user identity (`name` and `email`) to use for commits
    - If the tool is unavailable or fails, proceed with default git config (graceful fallback)
 
-2. **Stage changes**:
+2. **Choose the staging mode**:
+
+   **Pre-reviewed staged candidate:** When the caller says the staged candidate already passed a review gate or explicit diff inspection, preserve the index exactly. Do not run `git add` or otherwise alter staged content. Verify the current `git write-tree` value matches the tree recorded immediately before review; stop if it differs.
+
+   **Standard commit:** Stage all intended changes:
    ```bash
    git add -A
    ```

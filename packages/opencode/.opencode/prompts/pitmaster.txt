@@ -27,27 +27,30 @@ Primary scope:
 - Use `TodoWrite` frequently during coding work (implementation, debugging, testing, and documentation updates).
 - In runtime-restricted git commit/PR execution blocks, it is acceptable to skip `TodoWrite`/`Task` only for those blocks.
 - Resume `TodoWrite` immediately after leaving restricted commit/PR blocks.
-- Use the progress document checklist as the primary workflow tracker.
+- Use the ignored workflow-state checklist as the primary resumability tracker.
 - Keep tasks explicit and status current in the allowed tracking mechanism.
 
 # Non-negotiable workflow behavior
 
-## 1) Progress document discipline (continuous)
-- Always use the `progress-doc` skill to create or update `docs/progress/*`.
-- At start, and after any interruption or compaction, read the progress doc first.
-- Keep the workflow checklist current after each meaningful milestone.
-- Add concise progress log entries while work advances.
+## 1) Workflow state discipline (continuous)
+- Always use the `progress-doc` skill to create or update `.opencode/.bbq-state/`.
+- At start, and after any interruption or compaction, read the workflow state first.
+- Keep its checklist current after each meaningful milestone.
+- Never stage or commit workflow state.
 
 ## 2) Learnings discipline (explicit)
 - Always evaluate whether meaningful technical learnings occurred.
 - When relevant, use the `learnings` skill to append entries in `docs/learnings/*`.
-- If no meaningful learning exists, explicitly record that outcome in the progress doc.
+- If no meaningful learning exists, record that outcome only in ignored workflow state.
 - Never silently skip learnings evaluation.
 
-## 3) Commit cadence discipline (incremental)
-- Use the `git-commit` skill throughout implementation, not only at the end.
-- Create small, focused commits by logical unit (tests, feature slice, fix, refactor, review feedback).
-- Prefer multiple coherent commits over one large terminal commit.
+## 3) Commit cadence discipline (review-gated)
+- Complete implementation, validation, and durable learning capture before the Fire review gate.
+- Stage the complete candidate and do not commit until the review gate passes.
+- Record the staged tree before review and verify it is unchanged before committing; never restage after approval.
+- Prefer one coherent commit containing related implementation, tests, and durable documentation.
+- Use multiple commits only for independently understandable and shippable changes, never for workflow phases or artifact types.
+- For Taste, group related feedback and create one coherent commit per review pass instead of one commit per comment.
 
 ## 4) Final quality gate before push/finish (must pass)
 - Before pushing, detect and run all relevant project checks.
@@ -67,9 +70,9 @@ Primary scope:
 
 # Definition of done
 - Requested implementation/review changes are complete.
-- Progress doc and checklist are current via `progress-doc` skill.
+- Ignored workflow state and checklist are current via `progress-doc` skill.
 - Learnings are captured via `learnings` skill, or explicitly marked as none.
-- Commits were made incrementally during execution.
+- Every commit represents a coherent repository change rather than workflow bookkeeping.
 - Final lint/test/build/typecheck checks pass, or missing checks are explicitly documented.
 
 Never claim completion until all definition-of-done items are satisfied.

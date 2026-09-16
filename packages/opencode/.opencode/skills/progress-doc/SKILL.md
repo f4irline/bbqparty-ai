@@ -1,24 +1,23 @@
 ---
 name: progress-doc
-description: Create and maintain implementation progress documentation for a feature branch
+description: Use when implementing or reviewing a ticket across interruptions or context compaction
 ---
 
-# Progress Documentation
+# Workflow State
 
-Create and maintain a progress document in `docs/progress/{branch-name}.md` to track implementation status.
+Maintain resumable workflow state without adding bookkeeping to repository history.
 
 ## File Location
 
+```text
+.opencode/.bbq-state/{branch-name}.md
 ```
-docs/progress/{branch-name}.md
-```
 
-Example: `docs/progress/feat-STU-15-user-authentication.md`
+Replace `/` in the branch name with `-`. Keep the file in the ticket worktree so parallel branches have independent state. The package gitignore excludes `.opencode/.bbq-state/`.
 
-Note: Replace `/` in branch names with `-` for the filename.
-Note: Keep this file in the branch's dedicated worktree checkout.
+Never stage or commit workflow state. If the state path appears in `git status`, stop and fix the ignore configuration before committing implementation changes.
 
-## Document Structure
+## Template
 
 ```markdown
 # {Ticket ID}: {Ticket Title}
@@ -26,180 +25,48 @@ Note: Keep this file in the branch's dedicated worktree checkout.
 **Branch:** `{branch-name}`
 **Worktree:** `{absolute-worktree-path}`
 **Status:** {In Progress | Blocked | Complete}
-**Started:** {YYYY-MM-DD}
 **Last Updated:** {YYYY-MM-DD HH:MM}
 
-## Overview
-
-{Brief description of what this ticket implements}
-
 ## Workflow Checklist
 
-> **IMPORTANT**: This checklist ensures all workflow steps are completed, even after context compaction.
-> Check off each phase as you complete it. After ANY interruption, read this section first.
+### Implementation
+- [ ] Read ticket, plan, House Rules, and relevant learnings
+- [ ] Write or update tests
+- [ ] Implement the change
+- [ ] Run relevant validation
+- [ ] Evaluate and capture durable learnings
+- [ ] Stage the complete candidate change
+- [ ] Pass the implementation review gate
+- [ ] Commit the approved candidate
 
-### Phase 1: Implementation
-- [ ] Write/modify tests (TDD)
-- [ ] Implement changes
-- [ ] Validate (lint, build, tests pass) — validate-changes plugin runs automatically
-- [ ] Commit implementation changes — use `git-commit` skill
-
-### Phase 2: Learnings
-- [ ] Extract learnings (or note: nothing noteworthy)
-- [ ] Document learnings if any — use `learnings` skill
-- [ ] Commit learnings if any — use `git-commit` skill
-
-### Phase 3: Finalize & Push (DO NOT SKIP)
-- [ ] Update this progress doc to "Complete" status
-- [ ] Commit progress doc update — use `git-commit` skill
-- [ ] Push all commits to remote — use `git-push-remote` skill
-- [ ] Create pull request — use GitHub MCP
-- [ ] Move ticket to "In Review" — use Linear MCP
+### Delivery
+- [ ] Push the branch
+- [ ] Create or update the pull request
+- [ ] Move the ticket to the required status
 
 ## Tasks
 
-- [ ] Task 1
-- [ ] Task 2
-- [x] Completed task
+- [ ] {Next concrete task}
 
 ## Progress Log
 
 ### {YYYY-MM-DD HH:MM}
 
-{Description of work done}
-
-### {YYYY-MM-DD HH:MM}
-
-{Description of work done}
+{Completed work, validation evidence, decision, or blocker}
 
 ## Technical Notes
 
-{Any important technical decisions, gotchas, or context for future reference}
-
-## Blockers
-
-{Any blockers or dependencies - remove section if none}
-
-## Testing
-
-- [ ] Unit tests written
-- [ ] Integration tests written
-- [ ] Manual testing completed
-
-## Files Changed
-
-- `path/to/file1.ts` - {brief description}
-- `path/to/file2.ts` - {brief description}
+{Important context needed to resume safely}
 ```
 
-## Steps
+## Usage
 
-### Creating New Progress Doc
+1. Resolve the current branch and worktree path.
+2. Run `bash "{workflow_root}/.opencode/scripts/ensure-workflow-state-ignore.sh" "{worktree-path}"`.
+3. Create `.opencode/.bbq-state/` when needed, then create or read the branch state before implementation.
+4. Update it after meaningful milestones, decisions, blockers, and review rounds.
+5. After interruption or compaction, read it before taking another action.
+6. Mark it complete only after push, pull request, and ticket transitions succeed.
+7. For a later workflow on the same branch, append a fresh unchecked section and set status back to `In Progress`; never reuse a completed checklist as the current pass.
 
-1. **Ensure directory exists**:
-   ```bash
-   mkdir -p docs/progress
-   ```
-
-2. **Get branch name**:
-   ```bash
-   git branch --show-current
-   ```
-
-3. **Get worktree path**:
-   ```bash
-   git rev-parse --show-toplevel
-   ```
-
-4. **Create the file** with the initial template filled in
-
-### Updating Progress Doc
-
-1. **Read current content** of the progress doc
-2. **Add new entry** to Progress Log with timestamp
-3. **Update**:
-   - Status if changed
-   - Last Updated timestamp
-   - Task checkboxes
-   - Files Changed list
-   - Technical Notes as needed
-   - Worktree path if missing
-
-## When to Update
-
-Update the progress document:
-- When starting a new task
-- After completing a significant piece of work
-- When encountering blockers
-- When making important technical decisions
-- Before committing changes
-
-## Example
-
-```markdown
-# STU-15: Add User Authentication
-
-**Branch:** `feat/STU-15-user-authentication`
-**Worktree:** `/Users/me/projects/my-repo/.opencode/.bbq-worktrees/feat-STU-15-user-authentication`
-**Status:** In Progress
-**Started:** 2024-01-15
-**Last Updated:** 2024-01-15 14:30
-
-## Overview
-
-Implement JWT-based authentication with login, logout, and token refresh.
-
-## Workflow Checklist
-
-> **IMPORTANT**: This checklist ensures all workflow steps are completed, even after context compaction.
-> Check off each phase as you complete it. After ANY interruption, read this section first.
-
-### Phase 1: Implementation
-- [x] Write/modify tests (TDD)
-- [x] Implement changes
-- [x] Validate (lint, build, tests pass) — validate-changes plugin runs automatically
-- [x] Commit implementation changes — use `git-commit` skill
-
-### Phase 2: Learnings
-- [ ] Extract learnings (or note: nothing noteworthy)
-- [ ] Document learnings if any — use `learnings` skill
-- [ ] Commit learnings if any — use `git-commit` skill
-
-### Phase 3: Finalize & Push (DO NOT SKIP)
-- [ ] Update this progress doc to "Complete" status
-- [ ] Commit progress doc update — use `git-commit` skill
-- [ ] Push all commits to remote — use `git-push-remote` skill
-- [ ] Create pull request — use GitHub MCP
-- [ ] Move ticket to "In Review" — use Linear MCP
-
-## Tasks
-
-- [x] Set up JWT utilities
-- [x] Create auth middleware
-- [ ] Implement login endpoint
-- [ ] Implement logout endpoint
-- [ ] Add refresh token logic
-- [ ] Write integration tests
-
-## Progress Log
-
-### 2024-01-15 14:30
-
-Completed JWT utilities and auth middleware. Moving on to login endpoint.
-
-### 2024-01-15 10:00
-
-Started implementation. Set up project structure for auth module.
-
-## Technical Notes
-
-- Using RS256 algorithm for JWT signing
-- Refresh tokens stored in httpOnly cookies
-- Access token expiry: 15 minutes
-
-## Files Changed
-
-- `api/src/utils/jwt.ts` - JWT sign/verify utilities
-- `api/src/middleware/auth.ts` - Authentication middleware
-- `api/src/types/auth.ts` - TypeScript interfaces
-```
+Use the state file for execution details such as timestamps, validation commands, review rounds, and external delivery status. Put durable technical knowledge in the implementation documentation or `docs/learnings/`; include those tracked files in the coherent change they explain rather than creating mandatory documentation-only commits.
