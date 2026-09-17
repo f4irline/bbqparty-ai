@@ -87,6 +87,10 @@ done
 
 for config in opencode.github-pat.json opencode.github-app.json; do
   config_file="$repo_root/packages/opencode/$config"
+  if [ "$(jq --raw-output '.agent.station.description' "$config_file")" != "Non-interactive branch resolver for Herdr worktree orchestration" ]; then
+    printf 'Baseline station agent description is missing in %s\n' "$config_file" >&2
+    exit 1
+  fi
   if [ "$(jq --raw-output '.agent.station.model // empty' "$config_file")" != "" ]; then
     printf 'Station agent pins a model in %s\n' "$config_file" >&2
     exit 1

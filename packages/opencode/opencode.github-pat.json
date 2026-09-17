@@ -4,6 +4,9 @@
     "compaction": {
       "prompt": "{file:./.opencode/prompts/compaction.txt}"
     },
+    "station": {
+      "description": "Non-interactive branch resolver for Herdr worktree orchestration"
+    },
     "sous-chef": {
       "description": "Research and planning agent for /bbq.pantry and /bbq.prep workflows",
       "mode": "primary",
