@@ -85,6 +85,10 @@ if ! rg --fixed-strings --quiet 'Requires HERDR_ENV=1' "$target/.opencode/skills
   printf '%s\n' 'Validated Herdr skill was not installed' >&2
   exit 1
 fi
+if [ ! -f "$target/.opencode/agents/station.md" ]; then
+  printf '%s\n' 'Station agent was not installed with the OpenCode menu' >&2
+  exit 1
+fi
 
 ticket_worktree="$temp_dir/ticket-worktree"
 git -C "$target" worktree add --quiet -b test-workflow-state "$ticket_worktree" HEAD
@@ -162,6 +166,23 @@ if printf 'n\n' | HERDR_CALL_LOG="$temp_dir/declined-herdr-calls" \
 fi
 if ! rg --ignore-case --quiet 'rerun' "$temp_dir/declined-output"; then
   printf '%s\n' 'Declined Herdr configuration lacked rerun guidance' >&2
+  exit 1
+fi
+
+upgrade_target="$temp_dir/upgrade-target"
+mkdir -p "$upgrade_target/.opencode"
+git -C "$upgrade_target" init --quiet
+git -C "$upgrade_target" config user.name 'BBQ Test'
+git -C "$upgrade_target" config user.email 'bbq-test@example.com'
+printf '%s\n' '{"$schema":"https://opencode.ai/config.json","username":"keep-me"}' > "$upgrade_target/opencode.json"
+printf '%s\n' 'old menu' > "$upgrade_target/.opencode/old-menu"
+printf 'y\nn\n' | HERDR_CALL_LOG="$temp_dir/upgrade-herdr-calls" \
+  HERDR_INTEGRATION_INSTALLED="$temp_dir/upgrade-integration-installed" \
+  CURL_CALL_LOG="$temp_dir/upgrade-curl-calls" \
+  PATH="$temp_dir/bin:$PATH" \
+  "$init_script" "$upgrade_target" --herdr --skip-docker --skip-env --auth-method pat > /dev/null
+if [ "$(jq --raw-output '.username' "$upgrade_target/opencode.json")" != "keep-me" ] || [ ! -f "$upgrade_target/.opencode/agents/station.md" ]; then
+  printf '%s\n' 'Menu upgrade did not install station while preserving opencode.json' >&2
   exit 1
 fi
 

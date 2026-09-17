@@ -4,6 +4,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 runner_source="$repo_root/packages/opencode/bbq-orchestrate.sh"
+opencode_source="$repo_root/packages/opencode/.opencode"
 temp_dir="$(mktemp -d)"
 
 cleanup() {
@@ -12,10 +13,38 @@ cleanup() {
 
 trap cleanup EXIT
 
-mkdir -p "$temp_dir/bin" "$temp_dir/target/.opencode" "$temp_dir/runs"
+mkdir -p "$temp_dir/bin" "$temp_dir/target" "$temp_dir/runs"
+git -C "$temp_dir/target" init --initial-branch=main --quiet
+git -C "$temp_dir/target" config user.name "BBQ Test"
+git -C "$temp_dir/target" config user.email "bbq-test@example.com"
+printf '%s\n' '# Test repository' > "$temp_dir/target/README.md"
+git -C "$temp_dir/target" add README.md
+git -C "$temp_dir/target" commit --quiet -m "test fixture"
+mkdir -p "$temp_dir/target/.opencode"
 cp "$runner_source" "$temp_dir/target/bbq-orchestrate.sh"
+cp -R "$opencode_source/." "$temp_dir/target/.opencode/"
+printf '%s\n' '{"$schema":"https://opencode.ai/config.json"}' > "$temp_dir/target/opencode.json"
 chmod +x "$temp_dir/target/bbq-orchestrate.sh"
 printf '%s\n' '{"runtime":"herdr"}' > "$temp_dir/target/.opencode/bbq-config.json"
+
+cat > "$temp_dir/bin/opencode" <<'EOF'
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+printf '%s\n' "$*" >> "$OPENCODE_CALL_LOG"
+printf 'station-env|%s|%s|%s\n' "${OPENCODE_CONFIG:-}" "${OPENCODE_CONFIG_DIR:-}" "${OPENCODE_CONFIG_CONTENT:-}" >> "$OPENCODE_CALL_LOG"
+if [ "${OPENCODE_STATION_FAIL:-}" = "1" ]; then
+  printf '%s\n' 'BBQ_STATION_RESULT: FAILED'
+  exit 0
+fi
+if [ "${OPENCODE_STATION_INVALID_BRANCH:-}" = "1" ]; then
+  printf '%s\n' 'BBQ_STATION_BRANCH: invalid branch'
+else
+  printf '%s\n' 'BBQ_STATION_BRANCH: chore/STU-15-herdr-session-placement'
+fi
+printf '%s\n' 'BBQ_STATION_RESULT: COMPLETE'
+EOF
 
 cat > "$temp_dir/bin/herdr" <<'EOF'
 #!/usr/bin/env bash
@@ -27,6 +56,44 @@ if [ "${HERDR_STDERR_WARNING:-}" = "1" ] && [ "$1 $2" = "tab create" ]; then
   printf '%s\n' 'Herdr warning: harmless diagnostic' >&2
 fi
 case "$1 $2" in
+  "worktree list")
+    if [ "${HERDR_WORKTREE_LIST_MODE:-}" = "closed" ]; then
+      printf '{"result":{"worktrees":[{"branch":"chore/STU-15-herdr-session-placement","path":"%s"}]}}\n' "$HERDR_WORKTREE_PATH"
+    elif [ "${HERDR_WORKTREE_LIST_MODE:-}" = "wrong-path" ]; then
+      printf '{"result":{"worktrees":[{"branch":"chore/STU-15-herdr-session-placement","path":"%s","open_workspace_id":"ticket-workspace"}]}}\n' "$HERDR_SOURCE_PATH"
+    elif [ -f "$HERDR_WORKTREE_STATE" ]; then
+      worktree_path="$(<"$HERDR_WORKTREE_STATE")"
+      printf '{"result":{"worktrees":[{"branch":"chore/STU-15-herdr-session-placement","path":"%s","open_workspace_id":"ticket-workspace"}]}}\n' "$worktree_path"
+    else
+      printf '%s\n' '{"result":{"worktrees":[]}}'
+    fi
+    ;;
+  "worktree create")
+    worktree_path=""
+    source_path=""
+    branch_name=""
+    base_ref=""
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        --cwd) source_path="$2"; shift 2 ;;
+        --branch) branch_name="$2"; shift 2 ;;
+        --base) base_ref="$2"; shift 2 ;;
+        --path) worktree_path="$2"; shift 2 ;;
+        *) shift ;;
+      esac
+    done
+    if [ -z "$source_path" ] || [ -z "$branch_name" ] || [ -z "$base_ref" ] || [ -z "$worktree_path" ]; then
+      printf '%s\n' 'Missing worktree creation argument' >&2
+      exit 2
+    fi
+    git -C "$source_path" worktree add --quiet -b "$branch_name" "$worktree_path" "$base_ref"
+    printf '%s' "$worktree_path" > "$HERDR_WORKTREE_STATE"
+    printf '{"result":{"worktree":{"path":"%s"},"workspace":{"workspace_id":"ticket-workspace"}}}\n' "$worktree_path"
+    ;;
+  "worktree open")
+    printf '%s' "$HERDR_WORKTREE_PATH" > "$HERDR_WORKTREE_STATE"
+    printf '{"result":{"worktree":{"path":"%s"},"workspace":{"workspace_id":"ticket-workspace"}}}\n' "$HERDR_WORKTREE_PATH"
+    ;;
   "tab create")
     count=0
     if [ -f "$HERDR_TAB_COUNTER" ]; then count="$(<"$HERDR_TAB_COUNTER")"; fi
@@ -68,13 +135,18 @@ set -euo pipefail
 printf 'sleep %s\n' "$*" >> "$HERDR_CALL_LOG"
 EOF
 
-chmod +x "$temp_dir/bin/herdr" "$temp_dir/bin/sleep"
+chmod +x "$temp_dir/bin/opencode" "$temp_dir/bin/herdr" "$temp_dir/bin/sleep"
 
 run_herdr() {
   local test_run_root="${BBQ_TEST_RUN_ROOT:-$temp_dir/runs}"
+  local worktree_path="$temp_dir/target/.opencode/.bbq-worktrees/chore-STU-15-herdr-session-placement"
 
+  OPENCODE_CALL_LOG="$temp_dir/opencode-calls" \
   HERDR_CALL_LOG="$temp_dir/calls" \
   HERDR_TAB_COUNTER="$temp_dir/tab-counter" \
+  HERDR_WORKTREE_STATE="$temp_dir/worktree-state" \
+  HERDR_WORKTREE_PATH="$worktree_path" \
+  HERDR_SOURCE_PATH="$temp_dir/target" \
   PATH="$temp_dir/bin:$PATH" \
   HERDR_ENV=1 \
   HERDR_WORKSPACE_ID=workspace-1 \
@@ -83,6 +155,30 @@ run_herdr() {
 }
 
 run_herdr STU-15 "focus on performance" > "$temp_dir/output"
+
+if ! rg --fixed-strings --quiet "run --command bbq.station --dir $temp_dir/target STU-15 focus on performance" "$temp_dir/opencode-calls"; then
+  printf '%s\n' 'Herdr workflow did not run the station preflight through its dedicated command' >&2
+  exit 1
+fi
+
+if [ "$(rg --count '^worktree create ' "$temp_dir/calls")" -ne 1 ]; then
+  printf '%s\n' 'Herdr workflow did not create the ticket worktree before phase agents' >&2
+  exit 1
+fi
+
+worktree_path="$temp_dir/target/.opencode/.bbq-worktrees/chore-STU-15-herdr-session-placement"
+if [ -e "$worktree_path/.opencode/commands/bbq.fire.md" ]; then
+  printf '%s\n' 'Herdr test fixture unexpectedly committed installed OpenCode configuration' >&2
+  exit 1
+fi
+if ! rg --fixed-strings --quiet "tab create --workspace ticket-workspace --cwd $worktree_path" "$temp_dir/calls"; then
+  printf 'Herdr phase tabs were not created in the ticket worktree workspace:\n%s\n' "$(<"$temp_dir/calls")" >&2
+  exit 1
+fi
+if ! rg --fixed-strings --quiet -- "-- $worktree_path" "$temp_dir/calls"; then
+  printf '%s\n' 'Herdr phase agents were not started from the ticket worktree path' >&2
+  exit 1
+fi
 
 if [ "$(rg --count '^tab create ' "$temp_dir/calls")" -ne 3 ] || [ "$(rg --count '^agent start ' "$temp_dir/calls")" -ne 3 ]; then
   printf '%s\n' 'Herdr workflow did not create one tab and agent per phase' >&2
@@ -106,6 +202,15 @@ if ! rg --fixed-strings --quiet -- '--kind opencode --pane w1:p1 -- ' "$temp_dir
   exit 1
 fi
 
+if ! rg --fixed-strings --quiet -- "--env BBQ_WORKFLOW_ROOT=$temp_dir/target" "$temp_dir/calls" || \
+  ! rg --fixed-strings --quiet -- "--env BBQ_WORKTREE_PATH=$worktree_path" "$temp_dir/calls" || \
+  ! rg --fixed-strings --quiet -- '--env BBQ_BRANCH_NAME=chore/STU-15-herdr-session-placement' "$temp_dir/calls" || \
+  ! rg --fixed-strings --quiet -- "--env OPENCODE_CONFIG=$temp_dir/target/opencode.json" "$temp_dir/calls" || \
+  ! rg --fixed-strings --quiet -- "--env OPENCODE_CONFIG_DIR=$temp_dir/target/.opencode" "$temp_dir/calls"; then
+  printf '%s\n' 'Herdr phase tabs did not receive the pre-resolved worktree context' >&2
+  exit 1
+fi
+
 if ! rg --fixed-strings --quiet -- '--no-focus' "$temp_dir/calls"; then
   printf '%s\n' 'Herdr tabs were not created without focus' >&2
   exit 1
@@ -113,6 +218,49 @@ fi
 
 if [ "$(rg --files "$temp_dir/runs" -g '*.log' | wc -l | tr -d ' ')" -lt 3 ] || [ "$(rg --files "$temp_dir/runs" -g '*.text' | wc -l | tr -d ' ')" -lt 3 ]; then
   printf '%s\n' 'Herdr responses and transcripts were not retained in run logs' >&2
+  exit 1
+fi
+
+rm -f "$temp_dir/calls" "$temp_dir/tab-counter"
+HERDR_WORKTREE_LIST_MODE=closed run_herdr --start-phase fire STU-15 > /dev/null
+if [ "$(rg --count '^worktree open ' "$temp_dir/calls")" -ne 1 ] || rg --quiet '^worktree create ' "$temp_dir/calls"; then
+  printf '%s\n' 'Herdr workflow did not open an existing closed worktree workspace' >&2
+  exit 1
+fi
+
+rm -f "$temp_dir/calls" "$temp_dir/tab-counter"
+if OPENCODE_STATION_INVALID_BRANCH=1 run_herdr --start-phase fire STU-15 > "$temp_dir/invalid-station-output" 2>&1; then
+  printf '%s\n' 'Herdr workflow accepted an invalid station branch' >&2
+  exit 1
+fi
+if [ -e "$temp_dir/calls" ] || ! rg --fixed-strings --quiet 'Station returned an invalid branch' "$temp_dir/invalid-station-output"; then
+  printf '%s\n' 'Invalid station output did not fail before Herdr worktree operations' >&2
+  exit 1
+fi
+
+rm -f "$temp_dir/calls" "$temp_dir/tab-counter"
+if HERDR_WORKTREE_LIST_MODE=wrong-path run_herdr --start-phase fire STU-15 > "$temp_dir/wrong-worktree-output" 2>&1; then
+  printf '%s\n' 'Herdr workflow accepted a ticket branch outside its deterministic worktree path' >&2
+  exit 1
+fi
+if rg --quiet '^tab create ' "$temp_dir/calls" || ! rg --fixed-strings --quiet 'expected path' "$temp_dir/wrong-worktree-output"; then
+  printf '%s\n' 'Wrong Herdr worktree path did not fail before phase creation' >&2
+  exit 1
+fi
+
+rm -f "$temp_dir/calls" "$temp_dir/tab-counter"
+run_herdr --start-phase fire stu-15 > /dev/null
+
+rm -f "$temp_dir/calls" "$temp_dir/tab-counter"
+OPENCODE_CONFIG="$temp_dir/override.json" OPENCODE_CONFIG_DIR="$temp_dir/override-config" OPENCODE_CONFIG_CONTENT='{"agent":{"station":{"disable":true}}}' run_herdr --start-phase fire STU-15 > /dev/null
+if ! rg --fixed-strings --quiet -- "--env OPENCODE_CONFIG=$temp_dir/target/opencode.json" "$temp_dir/calls" || \
+  ! rg --fixed-strings --quiet -- "--env OPENCODE_CONFIG_DIR=$temp_dir/target/.opencode" "$temp_dir/calls" || \
+  ! rg --fixed-strings --quiet -- '--env OPENCODE_CONFIG_CONTENT=' "$temp_dir/calls" || \
+  ! rg --fixed-strings --quiet -- "station-env|$temp_dir/target/opencode.json|$temp_dir/target/.opencode|" "$temp_dir/opencode-calls" || \
+  rg --fixed-strings --quiet -- "$temp_dir/override" "$temp_dir/calls" || \
+  rg --fixed-strings --quiet -- "$temp_dir/override" "$temp_dir/opencode-calls" || \
+  rg --fixed-strings --quiet -- '"disable":true' "$temp_dir/opencode-calls"; then
+  printf '%s\n' 'Inherited OpenCode overrides hid the source project configuration' >&2
   exit 1
 fi
 
@@ -144,8 +292,8 @@ fi
 rm -f "$temp_dir/calls" "$temp_dir/tab-counter"
 run_herdr --start-phase fire STU-15 > "$temp_dir/first-run-output"
 run_herdr --start-phase fire STU-15 > "$temp_dir/second-run-output"
-first_name="$(rg -o 'bbq-[a-z0-9_-]+' "$temp_dir/first-run-output" | sort -u)"
-second_name="$(rg -o 'bbq-[a-z0-9_-]+' "$temp_dir/second-run-output" | sort -u)"
+first_name="$(rg '^Starting fire ' "$temp_dir/first-run-output" | rg -o 'bbq-[a-z0-9_-]+' | sort -u)"
+second_name="$(rg '^Starting fire ' "$temp_dir/second-run-output" | rg -o 'bbq-[a-z0-9_-]+' | sort -u)"
 if ! [[ "$first_name" =~ ^[a-z][a-z0-9_-]{0,31}$ ]] || [ "$first_name" = "$second_name" ]; then
   printf '%s\n' 'Herdr agent names were invalid or reused across runs' >&2
   exit 1
@@ -190,7 +338,9 @@ for failure_case in prompt wait read; do
   esac
 
   if env "${failure_env[@]}" BBQ_TEST_RUN_ROOT="$failure_runs" \
+    OPENCODE_CALL_LOG="$temp_dir/opencode-calls" \
     HERDR_CALL_LOG="$temp_dir/calls" HERDR_TAB_COUNTER="$temp_dir/tab-counter" \
+    HERDR_WORKTREE_STATE="$temp_dir/worktree-state" HERDR_WORKTREE_PATH="$worktree_path" \
     PATH="$temp_dir/bin:$PATH" HERDR_ENV=1 HERDR_WORKSPACE_ID=workspace-1 \
     BBQ_ORCHESTRATE_RUN_ROOT="$failure_runs" \
     "$temp_dir/target/bbq-orchestrate.sh" STU-15 > "$temp_dir/$failure_case-output" 2>&1; then

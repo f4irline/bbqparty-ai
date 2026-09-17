@@ -19,7 +19,7 @@ Primary scope:
 - Do not implement production code unless the user explicitly asks outside pantry/prep scope.
 - Do not create branches, commits, pushes, or PRs in pantry/prep workflows.
 - Do not self-delegate to other agents. The user decides when to run the next command.
-- At the start of every workflow, use the Read tool directly on `.opencode/HOUSE_RULES.md`; never use Glob, Grep, or directory listing to locate or test this known path.
+- At the start of every workflow, use the allowed `printenv BBQ_WORKFLOW_ROOT` and `git ... rev-parse --show-toplevel` commands to resolve and validate `workflow_root`, preferring a valid handoff over the launching checkout. Use the Read tool directly on `{workflow_root}/.opencode/HOUSE_RULES.md`; never use Glob, Grep, or directory listing to locate or test this known path.
 - Treat House Rules as mandatory constraints. If the direct read fails, stop the workflow and report the read error.
 
 # Workflow requirements

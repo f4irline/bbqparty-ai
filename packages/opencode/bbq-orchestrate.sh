@@ -54,6 +54,11 @@ server_url="${BBQ_OPENCODE_URL:-}"
 server_pid=""
 server_log="$run_dir/opencode-server.log"
 runtime=""
+herdr_branch_name=""
+herdr_worktree_path=""
+herdr_workspace_id=""
+herdr_opencode_config=""
+herdr_opencode_config_dir=""
 
 cleanup_server() {
   if [ -n "$server_pid" ] && kill -0 "$server_pid" >/dev/null 2>&1; then
@@ -256,6 +261,7 @@ run_herdr_phase() {
   local log_file="$run_dir/$phase.log" text_file="$run_dir/$phase.text"
   local tab_response pane_id agent_name start_response prompt_response agent_status wait_response read_response
   local ticket_slug run_token
+  local -a tab_args
   local command_ready_delay_seconds="${BBQ_HERDR_COMMAND_READY_DELAY_SECONDS:-3}"
 
   if ! [[ "$command_ready_delay_seconds" =~ ^[0-9]+$ ]]; then
@@ -269,14 +275,19 @@ run_herdr_phase() {
   : > "$log_file"
   printf 'Starting %s for %s in Herdr agent %s\n' "$phase" "$ticket_id" "$agent_name"
 
-  if ! tab_response="$(herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd "$repo_root" --label "BBQ $ticket_id $phase" --no-focus 2>> "$log_file")"; then
+  tab_args=(tab create --workspace "$herdr_workspace_id" --cwd "$herdr_worktree_path" --label "BBQ $ticket_id $phase" --env "BBQ_WORKFLOW_ROOT=$repo_root" --env "BBQ_WORKTREE_PATH=$herdr_worktree_path" --env "BBQ_BRANCH_NAME=$herdr_branch_name")
+  if [ -n "$herdr_opencode_config" ]; then
+    tab_args+=(--env "OPENCODE_CONFIG=$herdr_opencode_config")
+  fi
+  tab_args+=(--env "OPENCODE_CONFIG_DIR=$herdr_opencode_config_dir" --env "OPENCODE_CONFIG_CONTENT=" --no-focus)
+  if ! tab_response="$(herdr "${tab_args[@]}" 2>> "$log_file")"; then
     printf '%s\n' "$tab_response" >> "$log_file"; printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Failed to create Herdr tab for $phase"; printf 'Stopped at: %s\n' "$phase"; printf 'Log: %s\n' "$log_file"; return 1
   fi
   printf '%s\n' "$tab_response" >> "$log_file"
   if ! pane_id="$(jq --raw-output --exit-status '.result.root_pane.pane_id | strings' <<< "$tab_response")"; then
     printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Herdr did not return a root pane ID"; printf 'Stopped at: %s\n' "$phase"; printf 'Log: %s\n' "$log_file"; return 1
   fi
-  if ! start_response="$(herdr agent start "$agent_name" --kind opencode --pane "$pane_id" -- "$repo_root" 2>> "$log_file")"; then
+  if ! start_response="$(herdr agent start "$agent_name" --kind opencode --pane "$pane_id" -- "$herdr_worktree_path" 2>> "$log_file")"; then
     printf '%s\n' "$start_response" >> "$log_file"; printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf 'Failed to start Herdr agent: %s\n' "$agent_name"; printf 'Stopped at: %s\n' "$phase"; printf 'Log: %s\n' "$log_file"; return 1
   fi
   printf '%s\n' "$start_response" >> "$log_file"
@@ -319,6 +330,211 @@ run_herdr_phase() {
   printf 'Inspect retained Herdr agent: herdr agent attach %s\n' "$agent_name"
 }
 
+resolve_station_branch() {
+  local station_log="$run_dir/station.log"
+  local result_line normalized_result_line
+  local station_result="" station_result_count=0
+  local branch_value="" branch_count=0
+  local normalized_branch normalized_ticket
+  local -a station_command
+
+  printf 'Resolving station for %s\n' "$ticket_id"
+  station_command=(env -u OPENCODE_CONFIG -u OPENCODE_CONFIG_DIR -u OPENCODE_CONFIG_CONTENT)
+  if [ -n "$herdr_opencode_config" ]; then
+    station_command+=("OPENCODE_CONFIG=$herdr_opencode_config")
+  fi
+  station_command+=("OPENCODE_CONFIG_DIR=$herdr_opencode_config_dir" "OPENCODE_CONFIG_CONTENT=" opencode run --command bbq.station --dir "$repo_root" "$command_arguments")
+  if ! "${station_command[@]}" > "$station_log" 2>&1; then
+    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Station command failed"; printf 'Log: %s\n' "$station_log"; return 1
+  fi
+
+  while IFS= read -r result_line; do
+    normalized_result_line="${result_line#"${result_line%%[![:space:]]*}"}"
+    normalized_result_line="${normalized_result_line%"${normalized_result_line##*[![:space:]]}"}"
+    case "$normalized_result_line" in
+      "BBQ_STATION_RESULT: COMPLETE"|"BBQ_STATION_RESULT: FAILED")
+        station_result_count=$((station_result_count + 1))
+        station_result="${normalized_result_line#BBQ_STATION_RESULT: }"
+        ;;
+      "BBQ_STATION_BRANCH: "*)
+        branch_count=$((branch_count + 1))
+        branch_value="${normalized_result_line#BBQ_STATION_BRANCH: }"
+        ;;
+    esac
+  done < "$station_log"
+
+  if [ "$station_result_count" -ne 1 ] || [ "$station_result" != "COMPLETE" ]; then
+    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Station did not complete successfully"; printf 'Log: %s\n' "$station_log"; return 1
+  fi
+  if [ "$branch_count" -ne 1 ]; then
+    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf 'Expected exactly one station branch, found %s\n' "$branch_count"; printf 'Log: %s\n' "$station_log"; return 1
+  fi
+  if ! [[ "$branch_value" =~ ^(feat|fix|refactor|docs|test|chore|perf)/[A-Za-z][A-Za-z0-9]*-[0-9]+-[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf 'Station returned an invalid branch: %s\n' "$branch_value"; printf 'Log: %s\n' "$station_log"; return 1
+  fi
+  normalized_branch="$(printf '%s' "$branch_value" | tr '[:upper:]' '[:lower:]')"
+  normalized_ticket="$(printf '%s' "$ticket_id" | tr '[:upper:]' '[:lower:]')"
+  case "$normalized_branch" in
+    */"$normalized_ticket"-*) ;;
+    *)
+      printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf 'Station branch does not match ticket %s: %s\n' "$ticket_id" "$branch_value"; printf 'Log: %s\n' "$station_log"; return 1
+      ;;
+  esac
+
+  herdr_branch_name="$branch_value"
+  printf 'Station branch: %s\n' "$herdr_branch_name"
+}
+
+resolve_common_git_dir() {
+  local checkout_path="$1"
+  local common_dir
+
+  if ! common_dir="$(git -C "$checkout_path" rev-parse --git-common-dir 2>/dev/null)"; then
+    return 1
+  fi
+  case "$common_dir" in
+    /*) ;;
+    *) common_dir="$checkout_path/$common_dir" ;;
+  esac
+  (cd "$common_dir" && pwd -P)
+}
+
+validate_herdr_worktree() {
+  local expected_path="$1"
+  local station_log="$run_dir/station.log"
+  local canonical_path canonical_expected git_root canonical_git_root
+  local source_common_dir worktree_common_dir current_branch
+
+  case "$herdr_worktree_path" in
+    /*) ;;
+    *)
+      printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf 'Herdr returned a non-absolute worktree path: %s\n' "$herdr_worktree_path"; printf 'Log: %s\n' "$station_log"; return 1
+      ;;
+  esac
+  if [ ! -d "$herdr_worktree_path" ]; then
+    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf 'Herdr worktree path does not exist: %s\n' "$herdr_worktree_path"; printf 'Log: %s\n' "$station_log"; return 1
+  fi
+  canonical_path="$(cd "$herdr_worktree_path" && pwd -P)"
+  canonical_expected="$(cd "$expected_path" 2>/dev/null && pwd -P || true)"
+  if [ -z "$canonical_expected" ] || [ "$canonical_path" != "$canonical_expected" ]; then
+    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf 'Ticket branch is checked out at %s; expected path: %s\n' "$canonical_path" "$expected_path"; printf 'Move or remove the conflicting worktree before retrying.\n'; printf 'Log: %s\n' "$station_log"; return 1
+  fi
+  if ! git_root="$(git -C "$canonical_path" rev-parse --show-toplevel 2>/dev/null)"; then
+    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf 'Herdr path is not a Git worktree: %s\n' "$canonical_path"; printf 'Log: %s\n' "$station_log"; return 1
+  fi
+  canonical_git_root="$(cd "$git_root" && pwd -P)"
+  if [ "$canonical_git_root" != "$canonical_path" ]; then
+    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf 'Herdr path is not the root of its Git worktree: %s\n' "$canonical_path"; printf 'Log: %s\n' "$station_log"; return 1
+  fi
+  if ! source_common_dir="$(resolve_common_git_dir "$repo_root")" || ! worktree_common_dir="$(resolve_common_git_dir "$canonical_path")" || [ "$source_common_dir" != "$worktree_common_dir" ]; then
+    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf 'Herdr worktree does not belong to the source repository: %s\n' "$canonical_path"; printf 'Log: %s\n' "$station_log"; return 1
+  fi
+  if ! current_branch="$(git -C "$canonical_path" branch --show-current)" || [ "$current_branch" != "$herdr_branch_name" ]; then
+    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf 'Herdr worktree branch mismatch: expected %s, found %s\n' "$herdr_branch_name" "${current_branch:-detached}"; printf 'Log: %s\n' "$station_log"; return 1
+  fi
+
+}
+
+resolve_new_branch_base() {
+  local base_ref=""
+
+  if base_ref="$(git -C "$repo_root" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null)"; then
+    printf '%s\n' "$base_ref"
+    return 0
+  fi
+  if git -C "$repo_root" show-ref --verify --quiet refs/remotes/origin/main; then
+    printf '%s\n' "origin/main"
+    return 0
+  fi
+  if git -C "$repo_root" show-ref --verify --quiet refs/remotes/origin/master; then
+    printf '%s\n' "origin/master"
+    return 0
+  fi
+  if git -C "$repo_root" show-ref --verify --quiet refs/heads/main; then
+    printf '%s\n' "main"
+    return 0
+  fi
+  if git -C "$repo_root" show-ref --verify --quiet refs/heads/master; then
+    printf '%s\n' "master"
+    return 0
+  fi
+  return 1
+}
+
+prepare_herdr_worktree() {
+  local station_log="$run_dir/station.log"
+  local list_response match_count matching_worktree open_response create_response
+  local branch_slug expected_path base_ref
+  local -a create_args
+
+  if ! resolve_station_branch; then return 1; fi
+
+  branch_slug="${herdr_branch_name//\//-}"
+  expected_path="$repo_root/.opencode/.bbq-worktrees/$branch_slug"
+
+  if ! list_response="$(herdr worktree list --cwd "$repo_root" 2>> "$station_log")"; then
+    printf '%s\n' "$list_response" >> "$station_log"; printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Failed to list Herdr worktrees"; printf 'Log: %s\n' "$station_log"; return 1
+  fi
+  printf '%s\n' "$list_response" >> "$station_log"
+  if ! match_count="$(jq --arg branch "$herdr_branch_name" '[.result.worktrees[]? | select(.branch == $branch)] | length' <<< "$list_response")"; then
+    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Herdr returned an invalid worktree list"; printf 'Log: %s\n' "$station_log"; return 1
+  fi
+  if [ "$match_count" -gt 1 ]; then
+    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf 'Herdr returned multiple worktrees for %s\n' "$herdr_branch_name"; printf 'Log: %s\n' "$station_log"; return 1
+  fi
+
+  if [ "$match_count" -eq 1 ]; then
+    matching_worktree="$(jq --arg branch "$herdr_branch_name" '.result.worktrees[] | select(.branch == $branch)' <<< "$list_response")"
+    if ! herdr_worktree_path="$(jq --raw-output --exit-status '.path | strings | select(length > 0)' <<< "$matching_worktree")"; then
+      printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Herdr worktree entry has no path"; printf 'Log: %s\n' "$station_log"; return 1
+    fi
+    if ! validate_herdr_worktree "$expected_path"; then return 1; fi
+    herdr_workspace_id="$(jq --raw-output '.open_workspace_id // empty' <<< "$matching_worktree")"
+    if [ -z "$herdr_workspace_id" ]; then
+      if ! open_response="$(herdr worktree open --cwd "$repo_root" --branch "$herdr_branch_name" --label "$ticket_id" --no-focus 2>> "$station_log")"; then
+        printf '%s\n' "$open_response" >> "$station_log"; printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Failed to open Herdr worktree workspace"; printf 'Log: %s\n' "$station_log"; return 1
+      fi
+      printf '%s\n' "$open_response" >> "$station_log"
+      if ! herdr_workspace_id="$(jq --raw-output --exit-status '.result.workspace.workspace_id | strings | select(length > 0)' <<< "$open_response")"; then
+        printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Herdr did not return an opened workspace ID"; printf 'Log: %s\n' "$station_log"; return 1
+      fi
+      herdr_worktree_path="$(jq --raw-output '.result.worktree.path // empty' <<< "$open_response")"
+      if [ -z "$herdr_worktree_path" ]; then
+        herdr_worktree_path="$(jq --raw-output '.path' <<< "$matching_worktree")"
+      fi
+      if ! validate_herdr_worktree "$expected_path"; then return 1; fi
+    fi
+  else
+    create_args=(worktree create --cwd "$repo_root" --branch "$herdr_branch_name")
+    if git -C "$repo_root" show-ref --verify --quiet "refs/heads/$herdr_branch_name"; then
+      :
+    elif git -C "$repo_root" show-ref --verify --quiet "refs/remotes/origin/$herdr_branch_name"; then
+      create_args+=(--base "origin/$herdr_branch_name")
+    else
+      if ! base_ref="$(resolve_new_branch_base)"; then
+        printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Could not resolve a base ref for the ticket worktree"; printf 'Log: %s\n' "$station_log"; return 1
+      fi
+      create_args+=(--base "$base_ref")
+    fi
+    create_args+=(--path "$expected_path" --label "$ticket_id" --no-focus)
+    if ! create_response="$(herdr "${create_args[@]}" 2>> "$station_log")"; then
+      printf '%s\n' "$create_response" >> "$station_log"; printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Failed to create Herdr worktree"; printf 'Log: %s\n' "$station_log"; return 1
+    fi
+    printf '%s\n' "$create_response" >> "$station_log"
+    if ! herdr_worktree_path="$(jq --raw-output --exit-status '.result.worktree.path | strings | select(length > 0)' <<< "$create_response")" || \
+      ! herdr_workspace_id="$(jq --raw-output --exit-status '.result.workspace.workspace_id | strings | select(length > 0)' <<< "$create_response")"; then
+      printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Herdr did not return the created worktree path and workspace ID"; printf 'Log: %s\n' "$station_log"; return 1
+    fi
+  fi
+
+  if ! validate_herdr_worktree "$expected_path"; then return 1; fi
+  if ! "$repo_root/.opencode/scripts/sync-worktree-local-files.sh" "$repo_root" "$herdr_worktree_path" >> "$station_log" 2>&1 || \
+    ! bash "$repo_root/.opencode/scripts/ensure-workflow-state-ignore.sh" "$herdr_worktree_path" >> "$station_log" 2>&1; then
+    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Failed to prepare local files in the Herdr worktree"; printf 'Log: %s\n' "$station_log"; return 1
+  fi
+  printf 'Ticket worktree: %s\n' "$herdr_worktree_path"
+}
+
 run_http_workflow() {
   require_command opencode
   require_command curl
@@ -330,6 +546,17 @@ run_http_workflow() {
 
 run_herdr_workflow() {
   require_command herdr
+  require_command opencode
+  if [ -f "$repo_root/opencode.json" ]; then
+    herdr_opencode_config="$repo_root/opencode.json"
+  elif [ -n "${OPENCODE_CONFIG:-}" ]; then
+    herdr_opencode_config="$OPENCODE_CONFIG"
+  fi
+  herdr_opencode_config_dir="$repo_root/.opencode"
+  if [ ! -d "$herdr_opencode_config_dir" ]; then
+    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf 'OpenCode config directory does not exist: %s\n' "$herdr_opencode_config_dir"; return 1
+  fi
+  if ! prepare_herdr_worktree; then return 1; fi
   if [ "$start_phase" = "pantry" ] && ! run_herdr_phase pantry bbq.pantry; then return 1; fi
   if { [ "$start_phase" = "pantry" ] || [ "$start_phase" = "prep" ]; } && ! run_herdr_phase prep bbq.prep; then return 1; fi
   run_herdr_phase fire bbq.fire

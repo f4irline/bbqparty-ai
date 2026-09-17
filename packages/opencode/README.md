@@ -48,6 +48,8 @@ export YOUR_GITHUB_PAT_ENV_VAR="github_pat_xxxxx"
 | `/bbq.rules` | 📜 Set up project house rules |
 | `/bbq.learn` | 📝 Write down learnings from current session |
 
+`/bbq.station` is an internal, non-interactive command used by the Herdr runner to resolve the ticket branch before it creates the ticket worktree.
+
 ## Kitchen Techniques (Skills)
 
 | Skill | What It Does |
@@ -66,6 +68,7 @@ export YOUR_GITHUB_PAT_ENV_VAR="github_pat_xxxxx"
 
 | Agent | What It Does |
 |-------|--------------|
+| `station` | Resolves the ticket branch before Herdr creates or opens its worktree |
 | `sous-chef` | Research and planning agent for `/bbq.pantry` and `/bbq.prep` |
 | `pitmaster` | Implementation and review-fix agent for `/bbq.fire` and `/bbq.taste` |
 | `health-inspector` | Independent review subagent for research, plans, and implementations |
@@ -104,7 +107,9 @@ The script runs pantry, prep, and fire serially in the user’s terminal. It sta
 
 `.opencode/bbq-config.json` selects `native` (the default) or `herdr`. Select Herdr during `init.sh` with `--herdr`, or answer Yes to its prompt. BBQ Party does not install Herdr; it validates a v0.9.0-or-newer CLI, downloads that exact version's official skill, and may update Herdr's user-level OpenCode integration.
 
-With `runtime: "herdr"`, run the script from a Herdr shell pane (`HERDR_ENV=1`). Each selected phase gets a separate retained tab and OpenCode agent. Before submitting a `/bbq.*` command, the runner waits three seconds for OpenCode to initialize its project command registry. Set `BBQ_HERDR_COMMAND_READY_DELAY_SECONDS` to a non-negative integer to adjust that delay. The runner emits `herdr agent attach <name>` after completion or when a phase blocks, and keeps JSON responses and plain transcripts in `.opencode/.bbq-runs/` for inspection. Without `HERDR_ENV=1`, it announces native fallback and runs the existing loopback OpenCode backend.
+With `runtime: "herdr"`, run the script from a Herdr shell pane (`HERDR_ENV=1`). The runner first invokes the internal `/bbq.station` command as a headless OpenCode preflight, then creates or opens the resolved ticket worktree. Every selected phase gets a separate retained tab and OpenCode agent inside that worktree's Herdr workspace, so the sessions appear in its worktree view. Phase agents explicitly load `opencode.json` and `.opencode` from the source checkout, which keeps newly installed, uncommitted BBQ configuration available inside the worktree. Before submitting a `/bbq.*` command, the runner waits three seconds for OpenCode to initialize its project command registry. Set `BBQ_HERDR_COMMAND_READY_DELAY_SECONDS` to a non-negative integer to adjust that delay. The runner emits `herdr agent attach <name>` after completion or when a phase blocks, and keeps station output, JSON responses, and plain transcripts in `.opencode/.bbq-runs/` for inspection. Without `HERDR_ENV=1`, it announces native fallback and runs the existing loopback OpenCode backend.
+
+The `station` agent does not pin a model. Set `agent.station.model` in the target project's `opencode.json` when branch resolution should use a specific model; restart OpenCode after changing agent configuration.
 
 To use an existing loopback server instead, set `BBQ_OPENCODE_URL`; the script will not start or stop that server:
 
@@ -156,7 +161,7 @@ Implementation workflow state is local bookkeeping under ignored `.opencode/.bbq
 - `init.sh` auto-discovers common `.env*` files and appends exact repo-relative mappings
 - Cleanup: remove old stations with `git worktree remove <path>` and `git worktree prune`
 
-When Herdr is active, it creates or opens the same deterministic worktree path and runs the same local-file sync helper. Remove the associated workspace with `herdr worktree remove --workspace <workspace-id>`; it does not delete the branch and requires `--force` for a dirty worktree.
+When Herdr is active, the runner creates or opens the same deterministic worktree path before starting Pantry, Prep, or Fire, then runs the same local-file sync helper. Remove the associated workspace with `herdr worktree remove --workspace <workspace-id>`; it does not delete the branch and requires `--force` for a dirty worktree.
 
 ## House Rules
 

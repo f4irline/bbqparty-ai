@@ -9,7 +9,7 @@ Parse the input: `$ARGUMENTS`
 
 You are planning the technical implementation for the ticket. If additional context was provided, factor it into your planning.
 
-Before planning, use the Read tool directly on `.opencode/HOUSE_RULES.md`:
+Before planning, run `printenv BBQ_WORKFLOW_ROOT`. When it returns a value, validate it with `git -C "$BBQ_WORKFLOW_ROOT" rev-parse --show-toplevel` and use it as `workflow_root`; otherwise use `git rev-parse --show-toplevel`. Require `workflow_root` to be an absolute existing Git checkout. Then use the Read tool directly on `{workflow_root}/.opencode/HOUSE_RULES.md`:
 - Do not use Glob, Grep, or directory listing to locate or test this known path.
 - Treat the loaded rules as mandatory constraints.
 - Use them to shape the design, test strategy, and governance notes.

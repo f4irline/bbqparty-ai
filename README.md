@@ -97,7 +97,7 @@ To opt into [Herdr](https://github.com/herdrdev/herdr) for persistent phase agen
 ./init.sh /path/to/your/project --herdr
 ```
 
-Herdr is optional and the interactive choice defaults to No. BBQ Party never installs or updates the Herdr binary. When selected, `init.sh` requires Herdr v0.9.0 or newer, downloads the matching official Herdr skill, and installs or repairs Herdr's user-level OpenCode integration when needed.
+Herdr is optional and the interactive choice defaults to No. BBQ Party never installs or updates the Herdr binary. When selected, `init.sh` requires Herdr v0.9.0 or newer, downloads the matching official Herdr skill, and installs or repairs Herdr's user-level OpenCode integration when needed. The workflow runner resolves the ticket branch through its model-configurable `station` agent, creates or opens the ticket worktree, and starts every selected phase inside that Herdr worktree workspace.
 
 The init script will ask you to choose an authentication method:
 
