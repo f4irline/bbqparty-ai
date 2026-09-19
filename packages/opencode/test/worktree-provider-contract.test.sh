@@ -90,6 +90,15 @@ if ! rg --fixed-strings --quiet -- 'Read only the authoritative `house_rules_pat
   printf '%s\n' 'Fire review does not receive an explicit authoritative House Rules path' >&2
   exit 1
 fi
+if rg --fixed-strings --quiet -- 'Give it the ticket ID, user context, `workflow_root`, `worktree_path`' "$opencode_root/commands/bbq.fire.md"; then
+  printf '%s\n' 'Fire passes the source checkout to health-inspector' >&2
+  exit 1
+fi
+if ! rg --fixed-strings --quiet -- '`worktree_path` is the only repository root' "$opencode_root/prompts/health-inspector.txt" || \
+  ! rg --fixed-strings --quiet -- 'Never access `workflow_root`' "$opencode_root/prompts/health-inspector.txt"; then
+  printf '%s\n' 'Health-inspector is not confined to the supplied worktree' >&2
+  exit 1
+fi
 
 station_command="$opencode_root/commands/bbq.station.md"
 station_agent="$opencode_root/agents/station.md"

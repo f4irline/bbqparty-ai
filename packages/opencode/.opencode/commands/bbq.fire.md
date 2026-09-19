@@ -81,7 +81,7 @@ Follow these steps:
 
 ## Implementation Review Gate
 
-After implementation, validation, learning capture, and staging are complete, use the Task tool to spawn the `health-inspector` subagent from `worktree_path`. Give it the ticket ID, user context, `workflow_root`, `worktree_path`, the authoritative `house_rules_path` selected above, and this task: review the staged candidate and any existing ticket-branch commits against the full Linear ticket, Technical Plan, House Rules, relevant learnings, and validation results.
+After implementation, validation, learning capture, and staging are complete, use the Task tool to spawn the `health-inspector` subagent from `worktree_path`. Give it the ticket ID, user context, `worktree_path`, the authoritative `house_rules_path` selected above, and this task: review the staged candidate and any existing ticket-branch commits against the full Linear ticket, Technical Plan, House Rules, relevant learnings, and validation results.
 
 - If it returns `REVIEW_RESULT: PASS`, create the implementation commit.
 - If it returns `REVIEW_RESULT: CHANGES_REQUIRED`, resolve every blocking and important finding in `worktree_path`, update tests and durable documentation as needed, rerun relevant validation, restage the complete candidate, refresh `reviewed_tree` with `git write-tree`, update ignored workflow state, and spawn a fresh `health-inspector` review. Do not commit between review rounds.
