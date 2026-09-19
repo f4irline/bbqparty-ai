@@ -43,24 +43,53 @@ done
 
 for command in bbq.pantry.md bbq.prep.md; do
   command_file="$opencode_root/commands/$command"
-  if ! rg --fixed-strings --quiet -- 'BBQ_WORKFLOW_ROOT' "$command_file"; then
-    printf 'Missing orchestrated workflow root contract in %s\n' "$command_file" >&2
+  if ! rg --fixed-strings --quiet -- '.opencode/.bbq-runtime/HOUSE_RULES.md' "$command_file"; then
+    printf 'Missing worktree-local House Rules contract in %s\n' "$command_file" >&2
+    exit 1
+  fi
+  if ! rg --fixed-strings --quiet -- '[BBQ_HOUSE_RULES_PATH=.opencode/.bbq-runtime/HOUSE_RULES.md]' "$command_file" || \
+    ! rg --fixed-strings --quiet -- 'authoritative `house_rules_path`' "$command_file"; then
+    printf 'House Rules mode is inferred rather than explicit in %s\n' "$command_file" >&2
     exit 1
   fi
 done
-if ! rg --fixed-strings --quiet -- 'BBQ_WORKFLOW_ROOT' "$opencode_root/prompts/sous-chef.txt"; then
-  printf '%s\n' 'Missing orchestrated workflow root contract in sous-chef prompt' >&2
+if ! rg --fixed-strings --quiet -- '.opencode/.bbq-runtime/HOUSE_RULES.md' "$opencode_root/prompts/sous-chef.txt"; then
+  printf '%s\n' 'Missing worktree-local House Rules contract in sous-chef prompt' >&2
+  exit 1
+fi
+if ! rg --fixed-strings --quiet -- '[BBQ_HOUSE_RULES_PATH=.opencode/.bbq-runtime/HOUSE_RULES.md]' "$opencode_root/prompts/sous-chef.txt"; then
+  printf '%s\n' 'Sous-chef infers House Rules mode from file existence' >&2
   exit 1
 fi
 for config in opencode.github-pat.json opencode.github-app.json; do
   config_file="$repo_root/packages/opencode/$config"
-  if [ "$(jq --raw-output '.agent["sous-chef"].tools.bash' "$config_file")" != "true" ] || \
-    [ "$(jq --raw-output '.agent["sous-chef"].permission.bash["printenv BBQ_WORKFLOW_ROOT"]' "$config_file")" != "allow" ] || \
-    [ "$(jq --raw-output '.agent["sous-chef"].permission.bash["git -C * rev-parse --show-toplevel"]' "$config_file")" != "allow" ]; then
-    printf 'Sous-chef lacks narrow workflow-root shell access in %s\n' "$config_file" >&2
+  if [ "$(jq --raw-output '.agent["sous-chef"].tools.bash' "$config_file")" != "false" ]; then
+    printf 'Sous-chef unexpectedly has shell access in %s\n' "$config_file" >&2
     exit 1
   fi
 done
+for file in "$opencode_root/commands/bbq.fire.md" "$opencode_root/prompts/pitmaster.txt"; do
+  if ! rg --fixed-strings --quiet -- '.opencode/.bbq-runtime/HOUSE_RULES.md' "$file"; then
+    printf 'Missing worktree-local House Rules contract in %s\n' "$file" >&2
+    exit 1
+  fi
+done
+for file in "$opencode_root/commands/bbq.fire.md" "$opencode_root/prompts/pitmaster.txt"; do
+  if rg --fixed-strings --quiet -- 'git -C "$BBQ_WORKFLOW_ROOT"' "$file" || \
+    rg --fixed-strings --quiet -- 'do not require or load a copy from the ticket worktree' "$file"; then
+    printf 'Pre-resolved Fire still accesses external House Rules context in %s\n' "$file" >&2
+    exit 1
+  fi
+  if ! rg --fixed-strings --quiet -- 'trust the orchestrator-validated `BBQ_WORKFLOW_ROOT`' "$file"; then
+    printf 'Pre-resolved Fire does not trust the orchestrator source-root validation in %s\n' "$file" >&2
+    exit 1
+  fi
+done
+if ! rg --fixed-strings --quiet -- 'Read only the authoritative `house_rules_path`' "$opencode_root/prompts/health-inspector.txt" || \
+  ! rg --fixed-strings --quiet -- 'authoritative `house_rules_path`' "$opencode_root/commands/bbq.fire.md"; then
+  printf '%s\n' 'Fire review does not receive an explicit authoritative House Rules path' >&2
+  exit 1
+fi
 
 station_command="$opencode_root/commands/bbq.station.md"
 station_agent="$opencode_root/agents/station.md"

@@ -5,11 +5,11 @@ agent: sous-chef
 
 Parse the input: `$ARGUMENTS`
 - The first word is the **ticket ID** (e.g., `STU-15`)
-- Everything after is **additional context** from the user (optional, e.g., constraints, preferences, scope notes)
+- Everything after is **additional context** from the user (optional, e.g., constraints, preferences, scope notes), except the reserved final `[BBQ_HOUSE_RULES_PATH=.opencode/.bbq-runtime/HOUSE_RULES.md]` marker supplied by the Herdr orchestrator
 
 You are planning the technical implementation for the ticket. If additional context was provided, factor it into your planning.
 
-Before planning, run `printenv BBQ_WORKFLOW_ROOT`. When it returns a value, validate it with `git -C "$BBQ_WORKFLOW_ROOT" rev-parse --show-toplevel` and use it as `workflow_root`; otherwise use `git rev-parse --show-toplevel`. Require `workflow_root` to be an absolute existing Git checkout. Then use the Read tool directly on `{workflow_root}/.opencode/HOUSE_RULES.md`:
+Before planning, use the Read tool directly on the path in the reserved final `[BBQ_HOUSE_RULES_PATH=.opencode/.bbq-runtime/HOUSE_RULES.md]` marker when present. Without that marker, use the Read tool directly on `.opencode/HOUSE_RULES.md`. Never choose the path based on file existence:
 - Do not use Glob, Grep, or directory listing to locate or test this known path.
 - Treat the loaded rules as mandatory constraints.
 - Use them to shape the design, test strategy, and governance notes.
@@ -99,7 +99,7 @@ Be specific about what will change and how. Preserve the original ticket descrip
 
 ## Technical Plan Review Gate
 
-After creating or revising the Technical Plan section, use the Task tool to spawn the `health-inspector` subagent. Give it the ticket ID, user context, and this task: review the current Technical Plan against the full Linear ticket, Research section, relevant repository evidence, learnings, and House Rules.
+After creating or revising the Technical Plan section, use the Task tool to spawn the `health-inspector` subagent. Give it the ticket ID, user context, the authoritative `house_rules_path` selected above, and this task: review the current Technical Plan against the full Linear ticket, Research section, relevant repository evidence, learnings, and House Rules.
 
 - If it returns `REVIEW_RESULT: PASS`, continue the workflow.
 - If it returns `REVIEW_RESULT: CHANGES_REQUIRED`, revise the Technical Plan to resolve every blocking and important finding, then spawn a fresh `health-inspector` review.

@@ -13,15 +13,7 @@
       "tools": {
         "write": false,
         "edit": false,
-        "bash": true
-      },
-      "permission": {
-        "bash": {
-          "*": "deny",
-          "printenv BBQ_WORKFLOW_ROOT": "allow",
-          "git rev-parse --show-toplevel": "allow",
-          "git -C * rev-parse --show-toplevel": "allow"
-        }
+        "bash": false
       },
       "prompt": "{file:./.opencode/prompts/sous-chef.txt}"
     },

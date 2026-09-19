@@ -8,7 +8,10 @@ if [ "$#" -ne 1 ]; then
 fi
 
 worktree_path="$1"
-ignore_pattern='/.opencode/.bbq-state/'
+ignore_patterns=(
+  '/.opencode/.bbq-state/'
+  '/.opencode/.bbq-runtime/'
+)
 
 if [ ! -d "$worktree_path" ]; then
   printf 'Repository or worktree path does not exist: %s\n' "$worktree_path" >&2
@@ -20,9 +23,9 @@ if ! common_git_dir="$(git -C "$worktree_path" rev-parse --path-format=absolute 
 fi
 
 exclude_file="$common_git_dir/info/exclude"
-if [ -f "$exclude_file" ] && grep -Fqx "$ignore_pattern" "$exclude_file"; then
-  exit 0
-fi
-
 mkdir -p "$(dirname "$exclude_file")"
-printf '%s\n' "$ignore_pattern" >> "$exclude_file"
+for ignore_pattern in "${ignore_patterns[@]}"; do
+  if [ ! -f "$exclude_file" ] || ! grep -Fqx "$ignore_pattern" "$exclude_file"; then
+    printf '%s\n' "$ignore_pattern" >> "$exclude_file"
+  fi
+done

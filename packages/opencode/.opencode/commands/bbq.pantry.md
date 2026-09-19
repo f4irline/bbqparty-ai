@@ -5,11 +5,11 @@ agent: sous-chef
 
 Parse the input: `$ARGUMENTS`
 - The first word is the **ticket ID** (e.g., `STU-15`)
-- Everything after is **additional context** from the user (optional, e.g., areas to focus on, specific concerns)
+- Everything after is **additional context** from the user (optional, e.g., areas to focus on, specific concerns), except the reserved final `[BBQ_HOUSE_RULES_PATH=.opencode/.bbq-runtime/HOUSE_RULES.md]` marker supplied by the Herdr orchestrator
 
 You are researching the ticket. If additional context was provided, incorporate it into your research focus.
 
-Before starting research, run `printenv BBQ_WORKFLOW_ROOT`. When it returns a value, validate it with `git -C "$BBQ_WORKFLOW_ROOT" rev-parse --show-toplevel` and use it as `workflow_root`; otherwise use `git rev-parse --show-toplevel`. Require `workflow_root` to be an absolute existing Git checkout. Then use the Read tool directly on `{workflow_root}/.opencode/HOUSE_RULES.md`:
+Before starting research, use the Read tool directly on the path in the reserved final `[BBQ_HOUSE_RULES_PATH=.opencode/.bbq-runtime/HOUSE_RULES.md]` marker when present. Without that marker, use the Read tool directly on `.opencode/HOUSE_RULES.md`. Never choose the path based on file existence:
 - Do not use Glob, Grep, or directory listing to locate or test this known path.
 - Treat the loaded rules as mandatory constraints for recommendations.
 - Use them to evaluate whether proposed approaches require an explicit exception.
@@ -78,7 +78,7 @@ Be thorough but concise in your research documentation. Preserve the original ti
 
 ## Research Review Gate
 
-After creating or revising the Research section, use the Task tool to spawn the `health-inspector` subagent. Give it the ticket ID, user context, and this task: review the current Research section against the full Linear ticket, relevant repository evidence, learnings, and House Rules.
+After creating or revising the Research section, use the Task tool to spawn the `health-inspector` subagent. Give it the ticket ID, user context, the authoritative `house_rules_path` selected above, and this task: review the current Research section against the full Linear ticket, relevant repository evidence, learnings, and House Rules.
 
 - If it returns `REVIEW_RESULT: PASS`, continue the workflow.
 - If it returns `REVIEW_RESULT: CHANGES_REQUIRED`, revise the Research section to resolve every blocking and important finding, then spawn a fresh `health-inspector` review.

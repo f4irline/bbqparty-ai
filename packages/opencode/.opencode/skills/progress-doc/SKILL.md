@@ -62,7 +62,7 @@ Never stage or commit workflow state. If the state path appears in `git status`,
 ## Usage
 
 1. Resolve the current branch and worktree path.
-2. Run `bash "{workflow_root}/.opencode/scripts/ensure-workflow-state-ignore.sh" "{worktree-path}"`.
+2. When no pre-resolved orchestration handoff is active, run `bash "{workflow_root}/.opencode/scripts/ensure-workflow-state-ignore.sh" "{worktree-path}"`. The Herdr orchestrator has already configured the ignore before a handed-off phase starts.
 3. Create `.opencode/.bbq-state/` when needed, then create or read the branch state before implementation.
 4. Update it after meaningful milestones, decisions, blockers, and review rounds.
 5. After interruption or compaction, read it before taking another action.

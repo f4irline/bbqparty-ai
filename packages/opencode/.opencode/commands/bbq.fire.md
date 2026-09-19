@@ -5,7 +5,7 @@ agent: pitmaster
 
 Parse the input: `$ARGUMENTS`
 - The first word is the **ticket ID** (e.g., `STU-15`)
-- Everything after is **additional context** from the user (optional, e.g., "this needs extensive research", "focus on performance", "skip tests for now")
+- Everything after is **additional context** from the user (optional, e.g., "this needs extensive research", "focus on performance", "skip tests for now"), except the reserved final `[BBQ_HOUSE_RULES_PATH=...]` marker supplied by the Herdr orchestrator
 
 You are implementing the ticket. If additional context was provided, adjust your approach accordingly.
 
@@ -20,12 +20,12 @@ Follow these steps:
 
 **Mandatory House Rules Gate:**
 - First inspect `BBQ_WORKFLOW_ROOT`, `BBQ_WORKTREE_PATH`, and `BBQ_BRANCH_NAME`.
-- If all three are set, treat them as the orchestrator's pre-resolved worktree handoff. Validate that both paths are absolute existing Git worktrees, that `git -C "$BBQ_WORKTREE_PATH" branch --show-current` equals `BBQ_BRANCH_NAME`, and that the branch belongs to the requested ticket. Set `workflow_root`, `worktree_path`, and `branch_name` from those values. Do not run branch discovery or create/open another worktree.
+- If all three are set, treat them as the orchestrator's pre-resolved worktree handoff: trust the orchestrator-validated `BBQ_WORKFLOW_ROOT` without accessing it, validate that `BBQ_WORKTREE_PATH` is the current absolute Git worktree, require `git branch --show-current` there to equal `BBQ_BRANCH_NAME`, and require the branch to belong to the requested ticket. Set `workflow_root`, `worktree_path`, and `branch_name` from those values. Do not run branch discovery or create/open another worktree.
 - If only some of the three variables are set, stop with `BBQ_PHASE_RESULT: FAILED`; never guess missing orchestration context.
 - If none are set, capture the launching checkout with `git rev-parse --show-toplevel` as `workflow_root` and initially set `worktree_path` to the same value.
-- Use the Read tool directly on `{workflow_root}/.opencode/HOUSE_RULES.md`.
+- With a pre-resolved handoff, use the Read tool directly on `{worktree_path}/.opencode/.bbq-runtime/HOUSE_RULES.md`. Without a handoff, use the Read tool directly on `{workflow_root}/.opencode/HOUSE_RULES.md`.
 - Do not use Glob, Grep, or directory listing to locate or test this known path.
-- Treat the loaded rules as binding for the entire workflow; do not require or load a copy from the ticket worktree.
+- Treat the loaded rules as binding for the entire workflow. Under a pre-resolved handoff, the ignored runtime file is the authoritative copy prepared by the orchestrator; do not reload it from `workflow_root`.
 - If the direct read fails, stop with `BBQ_PHASE_RESULT: FAILED` and report the read error.
 - Track any required exception explicitly in the ignored workflow state.
 
@@ -44,7 +44,7 @@ Follow these steps:
     - If Herdr is configured but `HERDR_ENV=1` is absent, state that native fallback is active and use the native fallback `git-worktree-prepare` skill.
     - The `git-worktree-find` skill remains the native fallback provider for continued review work in `/bbq.taste`.
     - Capture outputs as `workflow_root`, `branch_name`, and `worktree_path`.
-    - Under a pre-resolved handoff or either provider, run `"{workflow_root}/.opencode/scripts/sync-worktree-local-files.sh" "{workflow_root}" "{worktree-path}"` after resolving the path. Then run `bash "{workflow_root}/.opencode/scripts/ensure-workflow-state-ignore.sh" "{worktree-path}"` so local state stays ignored even when installed configuration is not committed. Worktree behavior is default-on and paths remain under `.opencode/.bbq-worktrees/`.
+    - Under a pre-resolved handoff, the orchestrator has already synchronized local files, prepared ignored runtime House Rules, and configured workflow-state ignores; do not rerun source-checkout scripts. Under either directly selected provider, run `"{workflow_root}/.opencode/scripts/sync-worktree-local-files.sh" "{workflow_root}" "{worktree-path}"` after resolving the path, then run `bash "{workflow_root}/.opencode/scripts/ensure-workflow-state-ignore.sh" "{worktree-path}"`. Worktree behavior is default-on and paths remain under `.opencode/.bbq-worktrees/`.
 7. From this point forward, run **all git, code, test, and documentation actions in that worktree path**.
     - Prefer explicit path-aware commands (`git -C "{worktree_path}" ...`) when possible.
     - Do not rely on the process current directory; this applies whether `worktree_path` is the root checkout or a dedicated worktree.
@@ -81,7 +81,7 @@ Follow these steps:
 
 ## Implementation Review Gate
 
-After implementation, validation, learning capture, and staging are complete, use the Task tool to spawn the `health-inspector` subagent from `worktree_path`. Give it the ticket ID, user context, `workflow_root`, `worktree_path`, and this task: review the staged candidate and any existing ticket-branch commits against the full Linear ticket, Technical Plan, House Rules, relevant learnings, and validation results.
+After implementation, validation, learning capture, and staging are complete, use the Task tool to spawn the `health-inspector` subagent from `worktree_path`. Give it the ticket ID, user context, `workflow_root`, `worktree_path`, the authoritative `house_rules_path` selected above, and this task: review the staged candidate and any existing ticket-branch commits against the full Linear ticket, Technical Plan, House Rules, relevant learnings, and validation results.
 
 - If it returns `REVIEW_RESULT: PASS`, create the implementation commit.
 - If it returns `REVIEW_RESULT: CHANGES_REQUIRED`, resolve every blocking and important finding in `worktree_path`, update tests and durable documentation as needed, rerun relevant validation, restage the complete candidate, refresh `reviewed_tree` with `git write-tree`, update ignored workflow state, and spawn a fresh `health-inspector` review. Do not commit between review rounds.
