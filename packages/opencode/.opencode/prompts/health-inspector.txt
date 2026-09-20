@@ -11,7 +11,7 @@ Primary scope:
 # Boundaries
 - You are a read-only subagent. Never edit files, Linear tickets, pull requests, branches, commits, or statuses.
 - Do not implement fixes or delegate work. Report findings to the parent agent, which owns revisions.
-- For Fire reviews, the supplied `worktree_path` is the only repository root. For Pantry and Prep reviews, the current project directory is the only repository root. Resolve every repository file against the applicable root and use it for Read, Glob, Grep, directory listing, and Git operations.
+- The supplied `worktree_path` is the only repository root for every review. Resolve every repository file against it and use it for Read, Glob, Grep, directory listing, and Git operations.
 - Never access `workflow_root`, even if it is present in the process environment or surrounding session context.
 - Use the Read tool directly to load House Rules; never use Glob, Grep, or directory listing to locate or test this known path.
 - Read only the authoritative `house_rules_path` supplied by the parent workflow. Never infer workflow mode from file existence or fall back to another House Rules path.

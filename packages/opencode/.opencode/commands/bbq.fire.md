@@ -5,7 +5,7 @@ agent: pitmaster
 
 Parse the input: `$ARGUMENTS`
 - The first word is the **ticket ID** (e.g., `STU-15`)
-- Everything after is **additional context** from the user (optional, e.g., "this needs extensive research", "focus on performance", "skip tests for now"), except the reserved final `[BBQ_HOUSE_RULES_PATH=...]` marker supplied by the Herdr orchestrator
+- Everything after is **additional context** from the user (optional, e.g., "this needs extensive research", "focus on performance", "skip tests for now"), except the reserved final `[BBQ_WORKTREE_PATH=...]` and `[BBQ_HOUSE_RULES_PATH=...]` markers supplied by the Herdr orchestrator
 
 You are implementing the ticket. If additional context was provided, adjust your approach accordingly.
 

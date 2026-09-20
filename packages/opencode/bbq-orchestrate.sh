@@ -272,7 +272,7 @@ run_herdr_phase() {
   run_token="$(printf '%s' "$run_dir" | cksum | cut -d ' ' -f 1)"
   agent_name="bbq-${ticket_slug:0:10}-${phase}-${run_token:0:9}"
   agent_name="${agent_name:0:32}"
-  phase_command_arguments="$command_arguments [BBQ_HOUSE_RULES_PATH=.opencode/.bbq-runtime/HOUSE_RULES.md]"
+  phase_command_arguments="$command_arguments [BBQ_WORKTREE_PATH=$herdr_worktree_path] [BBQ_HOUSE_RULES_PATH=$herdr_worktree_path/.opencode/.bbq-runtime/HOUSE_RULES.md]"
   : > "$log_file"
   printf 'Starting %s for %s in Herdr agent %s\n' "$phase" "$ticket_id" "$agent_name"
 

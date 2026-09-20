@@ -47,9 +47,15 @@ for command in bbq.pantry.md bbq.prep.md; do
     printf 'Missing worktree-local House Rules contract in %s\n' "$command_file" >&2
     exit 1
   fi
-  if ! rg --fixed-strings --quiet -- '[BBQ_HOUSE_RULES_PATH=.opencode/.bbq-runtime/HOUSE_RULES.md]' "$command_file" || \
+  if ! rg --fixed-strings --quiet -- '[BBQ_HOUSE_RULES_PATH=...]' "$command_file" || \
     ! rg --fixed-strings --quiet -- 'authoritative `house_rules_path`' "$command_file"; then
     printf 'House Rules mode is inferred rather than explicit in %s\n' "$command_file" >&2
+    exit 1
+  fi
+  if ! rg --fixed-strings --quiet -- '[BBQ_WORKTREE_PATH=...]' "$command_file" || \
+    ! rg --fixed-strings --quiet -- '`worktree_path` as the only repository root' "$command_file" || \
+    ! rg --fixed-strings --quiet -- 'authoritative `worktree_path`' "$command_file"; then
+    printf 'Missing explicit worktree boundary in %s\n' "$command_file" >&2
     exit 1
   fi
 done
@@ -57,8 +63,10 @@ if ! rg --fixed-strings --quiet -- '.opencode/.bbq-runtime/HOUSE_RULES.md' "$ope
   printf '%s\n' 'Missing worktree-local House Rules contract in sous-chef prompt' >&2
   exit 1
 fi
-if ! rg --fixed-strings --quiet -- '[BBQ_HOUSE_RULES_PATH=.opencode/.bbq-runtime/HOUSE_RULES.md]' "$opencode_root/prompts/sous-chef.txt"; then
-  printf '%s\n' 'Sous-chef infers House Rules mode from file existence' >&2
+if ! rg --fixed-strings --quiet -- '[BBQ_HOUSE_RULES_PATH=...]' "$opencode_root/prompts/sous-chef.txt" || \
+  ! rg --fixed-strings --quiet -- '[BBQ_WORKTREE_PATH=...]' "$opencode_root/prompts/sous-chef.txt" || \
+  ! rg --fixed-strings --quiet -- '`worktree_path` as the only repository root' "$opencode_root/prompts/sous-chef.txt"; then
+  printf '%s\n' 'Sous-chef lacks explicit Herdr path boundaries' >&2
   exit 1
 fi
 for config in opencode.github-pat.json opencode.github-app.json; do

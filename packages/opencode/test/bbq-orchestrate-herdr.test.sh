@@ -203,7 +203,7 @@ if [ "$(rg --count '^tab create ' "$temp_dir/calls")" -ne 3 ] || [ "$(rg --count
 fi
 
 for phase in pantry prep fire; do
-  if ! rg --fixed-strings --quiet "/bbq.$phase STU-15 focus on performance [BBQ_HOUSE_RULES_PATH=.opencode/.bbq-runtime/HOUSE_RULES.md] --wait" "$temp_dir/calls"; then
+  if ! rg --fixed-strings --quiet "/bbq.$phase STU-15 focus on performance [BBQ_WORKTREE_PATH=$worktree_path] [BBQ_HOUSE_RULES_PATH=$runtime_house_rules] --wait" "$temp_dir/calls"; then
     printf 'Herdr did not prompt the %s command with context\n' "$phase" >&2
     exit 1
   fi
