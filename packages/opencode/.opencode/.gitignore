@@ -1,6 +1,5 @@
 .bbq-worktrees/
 .bbq-runs/
 .bbq-state/
-.bbq-runtime/
 node_modules/
 bun.lock

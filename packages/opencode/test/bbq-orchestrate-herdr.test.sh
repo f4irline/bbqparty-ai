@@ -18,8 +18,6 @@ git -C "$temp_dir/target" init --initial-branch=main --quiet
 git -C "$temp_dir/target" config user.name "BBQ Test"
 git -C "$temp_dir/target" config user.email "bbq-test@example.com"
 printf '%s\n' '# Test repository' > "$temp_dir/target/README.md"
-git -C "$temp_dir/target" add README.md
-git -C "$temp_dir/target" commit --quiet -m "test fixture"
 mkdir -p "$temp_dir/target/.opencode"
 cp "$runner_source" "$temp_dir/target/bbq-orchestrate.sh"
 cp -R "$opencode_source/." "$temp_dir/target/.opencode/"
@@ -27,6 +25,8 @@ printf '%s\n' '{"$schema":"https://opencode.ai/config.json"}' > "$temp_dir/targe
 printf '%s\n' 'Test house rules' > "$temp_dir/target/.opencode/HOUSE_RULES.md"
 chmod +x "$temp_dir/target/bbq-orchestrate.sh"
 printf '%s\n' '{"runtime":"herdr"}' > "$temp_dir/target/.opencode/bbq-config.json"
+git -C "$temp_dir/target" add README.md opencode.json .opencode
+git -C "$temp_dir/target" commit --quiet -m "test fixture"
 
 cat > "$temp_dir/bin/opencode" <<'EOF'
 #!/usr/bin/env bash
@@ -136,16 +136,7 @@ set -euo pipefail
 printf 'sleep %s\n' "$*" >> "$HERDR_CALL_LOG"
 EOF
 
-cat > "$temp_dir/bin/mv" <<'EOF'
-#!/usr/bin/env bash
-
-set -euo pipefail
-
-if [ "${BBQ_TEST_MV_FAIL:-}" = "1" ]; then exit 1; fi
-exec /bin/mv "$@"
-EOF
-
-chmod +x "$temp_dir/bin/opencode" "$temp_dir/bin/herdr" "$temp_dir/bin/sleep" "$temp_dir/bin/mv"
+chmod +x "$temp_dir/bin/opencode" "$temp_dir/bin/herdr" "$temp_dir/bin/sleep"
 
 run_herdr() {
   local test_run_root="${BBQ_TEST_RUN_ROOT:-$temp_dir/runs}"
@@ -177,14 +168,13 @@ if [ "$(rg --count '^worktree create ' "$temp_dir/calls")" -ne 1 ]; then
 fi
 
 worktree_path="$temp_dir/target/.opencode/.bbq-worktrees/chore-STU-15-herdr-session-placement"
-runtime_dir="$worktree_path/.opencode/.bbq-runtime"
-runtime_house_rules="$worktree_path/.opencode/.bbq-runtime/HOUSE_RULES.md"
-if [ -e "$worktree_path/.opencode/commands/bbq.fire.md" ]; then
-  printf '%s\n' 'Herdr test fixture unexpectedly committed installed OpenCode configuration' >&2
+worktree_house_rules="$worktree_path/.opencode/HOUSE_RULES.md"
+if [ ! -f "$worktree_path/.opencode/commands/bbq.fire.md" ] || [ "$(<"$worktree_house_rules")" != "Test house rules" ]; then
+  printf '%s\n' 'Herdr worktree does not contain committed OpenCode configuration' >&2
   exit 1
 fi
-if [ "$(<"$runtime_house_rules")" != "Test house rules" ] || ! git -C "$worktree_path" check-ignore --quiet .opencode/.bbq-runtime/HOUSE_RULES.md; then
-  printf '%s\n' 'Herdr workflow did not prepare ignored worktree-local House Rules' >&2
+if [ -e "$worktree_path/.opencode/.bbq-runtime" ]; then
+  printf '%s\n' 'Herdr workflow unexpectedly created runtime configuration' >&2
   exit 1
 fi
 
@@ -203,7 +193,7 @@ if [ "$(rg --count '^tab create ' "$temp_dir/calls")" -ne 3 ] || [ "$(rg --count
 fi
 
 for phase in pantry prep fire; do
-  if ! rg --fixed-strings --quiet "/bbq.$phase STU-15 focus on performance [BBQ_WORKTREE_PATH=$worktree_path] [BBQ_HOUSE_RULES_PATH=$runtime_house_rules] --wait" "$temp_dir/calls"; then
+  if ! rg --fixed-strings --quiet "/bbq.$phase STU-15 focus on performance [BBQ_WORKTREE_PATH=$worktree_path] [BBQ_HOUSE_RULES_PATH=$worktree_house_rules] --wait" "$temp_dir/calls"; then
     printf 'Herdr did not prompt the %s command with context\n' "$phase" >&2
     exit 1
   fi
@@ -219,13 +209,13 @@ if ! rg --fixed-strings --quiet -- '--kind opencode --pane w1:p1 -- ' "$temp_dir
   exit 1
 fi
 
-if ! rg --fixed-strings --quiet -- "--env BBQ_WORKFLOW_ROOT=$temp_dir/target" "$temp_dir/calls" || \
-  ! rg --fixed-strings --quiet -- "--env BBQ_WORKTREE_PATH=$worktree_path" "$temp_dir/calls" || \
+if ! rg --fixed-strings --quiet -- "--env BBQ_WORKTREE_PATH=$worktree_path" "$temp_dir/calls" || \
   ! rg --fixed-strings --quiet -- '--env BBQ_BRANCH_NAME=chore/STU-15-herdr-session-placement' "$temp_dir/calls" || \
-  ! rg --fixed-strings --quiet -- "--env OPENCODE_CONFIG=$temp_dir/target/opencode.json" "$temp_dir/calls" || \
-  ! rg --fixed-strings --quiet -- "--env OPENCODE_CONFIG_DIR=$temp_dir/target/.opencode" "$temp_dir/calls" || \
+  ! rg --fixed-strings --quiet -- "--env OPENCODE_CONFIG=$worktree_path/opencode.json" "$temp_dir/calls" || \
+  ! rg --fixed-strings --quiet -- "--env OPENCODE_CONFIG_DIR=$worktree_path/.opencode" "$temp_dir/calls" || \
+  rg --fixed-strings --quiet -- '--env BBQ_WORKFLOW_ROOT=' "$temp_dir/calls" || \
   ! rg --fixed-strings --quiet -- '--env OPENCODE_CONFIG_CONTENT=' "$temp_dir/calls"; then
-  printf '%s\n' 'Herdr phase tabs did not receive the pre-resolved worktree context' >&2
+  printf '%s\n' 'Herdr phase tabs did not receive worktree-only OpenCode context' >&2
   exit 1
 fi
 
@@ -238,79 +228,6 @@ if [ "$(rg --files "$temp_dir/runs" -g '*.log' | wc -l | tr -d ' ')" -lt 3 ] || 
   printf '%s\n' 'Herdr responses and transcripts were not retained in run logs' >&2
   exit 1
 fi
-
-printf '%s\n' 'previous runtime rules' > "$runtime_house_rules"
-rm -f "$temp_dir/calls" "$temp_dir/tab-counter"
-if BBQ_TEST_MV_FAIL=1 run_herdr --start-phase fire STU-15 > "$temp_dir/runtime-atomic-output" 2>&1; then
-  printf '%s\n' 'Herdr workflow accepted a failed atomic runtime install' >&2
-  exit 1
-fi
-if [ "$(<"$runtime_house_rules")" != "previous runtime rules" ] || rg --quiet '^tab create ' "$temp_dir/calls"; then
-  printf '%s\n' 'Failed atomic runtime install replaced prior rules or reached phase startup' >&2
-  exit 1
-fi
-
-runtime_victim="$temp_dir/runtime-victim"
-printf '%s\n' 'do not overwrite' > "$runtime_victim"
-rm -f "$runtime_house_rules"
-ln -s "$runtime_victim" "$runtime_house_rules"
-rm -f "$temp_dir/calls" "$temp_dir/tab-counter"
-if run_herdr --start-phase fire STU-15 > "$temp_dir/runtime-symlink-output" 2>&1; then
-  printf '%s\n' 'Herdr workflow accepted a symlinked runtime House Rules target' >&2
-  exit 1
-fi
-if [ "$(<"$runtime_victim")" != "do not overwrite" ] || rg --quiet '^tab create ' "$temp_dir/calls"; then
-  printf '%s\n' 'Symlinked runtime target was modified or reached phase startup' >&2
-  exit 1
-fi
-rm -f "$runtime_house_rules"
-
-runtime_dir_victim="$temp_dir/runtime-dir-victim"
-mkdir "$runtime_dir_victim"
-rmdir "$runtime_dir"
-ln -s "$runtime_dir_victim" "$runtime_dir"
-rm -f "$temp_dir/calls" "$temp_dir/tab-counter"
-if run_herdr --start-phase fire STU-15 > "$temp_dir/runtime-dir-symlink-output" 2>&1; then
-  printf '%s\n' 'Herdr workflow accepted a symlinked runtime directory' >&2
-  exit 1
-fi
-if [ -e "$runtime_dir_victim/HOUSE_RULES.md" ] || rg --quiet '^tab create ' "$temp_dir/calls"; then
-  printf '%s\n' 'Symlinked runtime directory was modified or reached phase startup' >&2
-  exit 1
-fi
-rm "$runtime_dir"
-
-opencode_dir_victim="$temp_dir/opencode-dir-victim"
-mkdir "$opencode_dir_victim"
-mv "$worktree_path/.opencode" "$worktree_path/.opencode-real"
-ln -s "$opencode_dir_victim" "$worktree_path/.opencode"
-rm -f "$temp_dir/calls" "$temp_dir/tab-counter"
-if run_herdr --start-phase fire STU-15 > "$temp_dir/opencode-dir-symlink-output" 2>&1; then
-  printf '%s\n' 'Herdr workflow accepted a symlinked .opencode directory' >&2
-  exit 1
-fi
-if [ -e "$opencode_dir_victim/.bbq-runtime/HOUSE_RULES.md" ] || rg --quiet '^tab create ' "$temp_dir/calls"; then
-  printf '%s\n' 'Symlinked .opencode directory was modified or reached phase startup' >&2
-  exit 1
-fi
-rm "$worktree_path/.opencode"
-mv "$worktree_path/.opencode-real" "$worktree_path/.opencode"
-
-tracked_runtime_dir="$worktree_path/.OpenCode/.bbq-runtime"
-mkdir -p "$tracked_runtime_dir"
-printf '%s\n' 'tracked runtime file' > "$tracked_runtime_dir/HOUSE_RULES.md"
-git -C "$worktree_path" add -f .OpenCode/.bbq-runtime/HOUSE_RULES.md
-rm -f "$temp_dir/calls" "$temp_dir/tab-counter"
-if run_herdr --start-phase fire STU-15 > "$temp_dir/tracked-runtime-output" 2>&1; then
-  printf '%s\n' 'Herdr workflow accepted a tracked runtime path' >&2
-  exit 1
-fi
-if rg --quiet '^tab create ' "$temp_dir/calls"; then
-  printf '%s\n' 'Tracked runtime path reached phase startup' >&2
-  exit 1
-fi
-git -C "$worktree_path" rm --cached --quiet -f .OpenCode/.bbq-runtime/HOUSE_RULES.md
-rm -rf "$tracked_runtime_dir"
 
 rm -f "$temp_dir/calls" "$temp_dir/tab-counter"
 HERDR_WORKTREE_LIST_MODE=closed run_herdr --start-phase fire STU-15 > /dev/null
@@ -344,14 +261,14 @@ run_herdr --start-phase fire stu-15 > /dev/null
 
 rm -f "$temp_dir/calls" "$temp_dir/tab-counter"
 OPENCODE_CONFIG="$temp_dir/override.json" OPENCODE_CONFIG_DIR="$temp_dir/override-config" OPENCODE_CONFIG_CONTENT='{"agent":{"station":{"disable":true}}}' run_herdr --start-phase fire STU-15 > /dev/null
-if ! rg --fixed-strings --quiet -- "--env OPENCODE_CONFIG=$temp_dir/target/opencode.json" "$temp_dir/calls" || \
-  ! rg --fixed-strings --quiet -- "--env OPENCODE_CONFIG_DIR=$temp_dir/target/.opencode" "$temp_dir/calls" || \
+if ! rg --fixed-strings --quiet -- "--env OPENCODE_CONFIG=$worktree_path/opencode.json" "$temp_dir/calls" || \
+  ! rg --fixed-strings --quiet -- "--env OPENCODE_CONFIG_DIR=$worktree_path/.opencode" "$temp_dir/calls" || \
   ! rg --fixed-strings --quiet -- '--env OPENCODE_CONFIG_CONTENT=' "$temp_dir/calls" || \
   ! rg --fixed-strings --quiet -- "station-env|$temp_dir/target/opencode.json|$temp_dir/target/.opencode|" "$temp_dir/opencode-calls" || \
   rg --fixed-strings --quiet -- "$temp_dir/override" "$temp_dir/calls" || \
   rg --fixed-strings --quiet -- "$temp_dir/override" "$temp_dir/opencode-calls" || \
   rg --fixed-strings --quiet -- '"disable":true' "$temp_dir/opencode-calls"; then
-  printf '%s\n' 'Inherited OpenCode overrides hid the source project configuration' >&2
+  printf '%s\n' 'Inherited OpenCode overrides hid the station or worktree configuration' >&2
   exit 1
 fi
 
@@ -450,6 +367,18 @@ done
 
 if ! rg --fixed-strings --quiet 'diagnostic transcript' "$temp_dir/prompt-runs" -g 'pantry.log'; then
   printf '%s\n' 'Prompt-failure transcript was not retained in the phase log' >&2
+  exit 1
+fi
+
+rm "$worktree_path/.opencode/commands/bbq.fire.md"
+rm -f "$temp_dir/calls" "$temp_dir/tab-counter"
+if run_herdr --start-phase fire STU-15 > "$temp_dir/missing-worktree-config-output" 2>&1; then
+  printf '%s\n' 'Herdr workflow accepted incomplete worktree OpenCode configuration' >&2
+  exit 1
+fi
+if rg --quiet '^tab create ' "$temp_dir/calls" || \
+  ! rg --fixed-strings --quiet 'Required committed OpenCode configuration is missing from the ticket worktree' "$temp_dir/missing-worktree-config-output"; then
+  printf '%s\n' 'Missing worktree configuration did not fail before phase startup with an actionable error' >&2
   exit 1
 fi
 

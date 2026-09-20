@@ -31,7 +31,6 @@ done
 
 fire_command="$opencode_root/commands/bbq.fire.md"
 for required in \
-  'BBQ_WORKFLOW_ROOT' \
   'BBQ_WORKTREE_PATH' \
   'BBQ_BRANCH_NAME' \
   'pre-resolved'; do
@@ -43,7 +42,7 @@ done
 
 for command in bbq.pantry.md bbq.prep.md; do
   command_file="$opencode_root/commands/$command"
-  if ! rg --fixed-strings --quiet -- '.opencode/.bbq-runtime/HOUSE_RULES.md' "$command_file"; then
+  if ! rg --fixed-strings --quiet -- '.opencode/HOUSE_RULES.md' "$command_file"; then
     printf 'Missing worktree-local House Rules contract in %s\n' "$command_file" >&2
     exit 1
   fi
@@ -59,7 +58,7 @@ for command in bbq.pantry.md bbq.prep.md; do
     exit 1
   fi
 done
-if ! rg --fixed-strings --quiet -- '.opencode/.bbq-runtime/HOUSE_RULES.md' "$opencode_root/prompts/sous-chef.txt"; then
+if ! rg --fixed-strings --quiet -- '.opencode/HOUSE_RULES.md' "$opencode_root/prompts/sous-chef.txt"; then
   printf '%s\n' 'Missing worktree-local House Rules contract in sous-chef prompt' >&2
   exit 1
 fi
@@ -77,19 +76,15 @@ for config in opencode.github-pat.json opencode.github-app.json; do
   fi
 done
 for file in "$opencode_root/commands/bbq.fire.md" "$opencode_root/prompts/pitmaster.txt"; do
-  if ! rg --fixed-strings --quiet -- '.opencode/.bbq-runtime/HOUSE_RULES.md' "$file"; then
+  if ! rg --fixed-strings --quiet -- '.opencode/HOUSE_RULES.md' "$file"; then
     printf 'Missing worktree-local House Rules contract in %s\n' "$file" >&2
     exit 1
   fi
 done
 for file in "$opencode_root/commands/bbq.fire.md" "$opencode_root/prompts/pitmaster.txt"; do
-  if rg --fixed-strings --quiet -- 'git -C "$BBQ_WORKFLOW_ROOT"' "$file" || \
-    rg --fixed-strings --quiet -- 'do not require or load a copy from the ticket worktree' "$file"; then
-    printf 'Pre-resolved Fire still accesses external House Rules context in %s\n' "$file" >&2
-    exit 1
-  fi
-  if ! rg --fixed-strings --quiet -- 'trust the orchestrator-validated `BBQ_WORKFLOW_ROOT`' "$file"; then
-    printf 'Pre-resolved Fire does not trust the orchestrator source-root validation in %s\n' "$file" >&2
+  if rg --fixed-strings --quiet -- '.opencode/.bbq-runtime/' "$file" || \
+    rg --fixed-strings --quiet -- 'trust the orchestrator-validated `BBQ_WORKFLOW_ROOT`' "$file"; then
+    printf 'Pre-resolved Fire still depends on source or runtime configuration in %s\n' "$file" >&2
     exit 1
   fi
 done

@@ -11,7 +11,7 @@ You are planning the technical implementation for the ticket. If additional cont
 
 Before planning, inspect the reserved final orchestration markers. When both markers are present, use the absolute `[BBQ_WORKTREE_PATH=...]` value as `worktree_path` and the absolute `[BBQ_HOUSE_RULES_PATH=...]` value as `house_rules_path`. Without either marker, use the current project directory as `worktree_path` and `.opencode/HOUSE_RULES.md` as `house_rules_path`. Treat a partial marker pair as an error and never choose paths based on file existence:
 - Treat `worktree_path` as the only repository root. Resolve every repository Read, Glob, Grep, and directory listing against it; never access `workflow_root` or any parent/source checkout.
-- Use the Read tool directly on `house_rules_path`. Under Herdr it must be the ignored worktree-local `.opencode/.bbq-runtime/HOUSE_RULES.md` file.
+- Use the Read tool directly on `house_rules_path`. Under Herdr it must be the committed worktree-local `.opencode/HOUSE_RULES.md` file.
 - Do not use Glob, Grep, or directory listing to locate or test this known path.
 - Treat the loaded rules as mandatory constraints.
 - Use them to shape the design, test strategy, and governance notes.

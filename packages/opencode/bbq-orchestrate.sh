@@ -272,15 +272,12 @@ run_herdr_phase() {
   run_token="$(printf '%s' "$run_dir" | cksum | cut -d ' ' -f 1)"
   agent_name="bbq-${ticket_slug:0:10}-${phase}-${run_token:0:9}"
   agent_name="${agent_name:0:32}"
-  phase_command_arguments="$command_arguments [BBQ_WORKTREE_PATH=$herdr_worktree_path] [BBQ_HOUSE_RULES_PATH=$herdr_worktree_path/.opencode/.bbq-runtime/HOUSE_RULES.md]"
+  phase_command_arguments="$command_arguments [BBQ_WORKTREE_PATH=$herdr_worktree_path] [BBQ_HOUSE_RULES_PATH=$herdr_worktree_path/.opencode/HOUSE_RULES.md]"
   : > "$log_file"
   printf 'Starting %s for %s in Herdr agent %s\n' "$phase" "$ticket_id" "$agent_name"
 
-  tab_args=(tab create --workspace "$herdr_workspace_id" --cwd "$herdr_worktree_path" --label "BBQ $ticket_id $phase" --env "BBQ_WORKFLOW_ROOT=$repo_root" --env "BBQ_WORKTREE_PATH=$herdr_worktree_path" --env "BBQ_BRANCH_NAME=$herdr_branch_name")
-  if [ -n "$herdr_opencode_config" ]; then
-    tab_args+=(--env "OPENCODE_CONFIG=$herdr_opencode_config")
-  fi
-  tab_args+=(--env "OPENCODE_CONFIG_DIR=$herdr_opencode_config_dir" --env "OPENCODE_CONFIG_CONTENT=" --no-focus)
+  tab_args=(tab create --workspace "$herdr_workspace_id" --cwd "$herdr_worktree_path" --label "BBQ $ticket_id $phase" --env "BBQ_WORKTREE_PATH=$herdr_worktree_path" --env "BBQ_BRANCH_NAME=$herdr_branch_name")
+  tab_args+=(--env "OPENCODE_CONFIG=$herdr_worktree_path/opencode.json" --env "OPENCODE_CONFIG_DIR=$herdr_worktree_path/.opencode" --env "OPENCODE_CONFIG_CONTENT=" --no-focus)
   if ! tab_response="$(herdr "${tab_args[@]}" 2>> "$log_file")"; then
     printf '%s\n' "$tab_response" >> "$log_file"; printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Failed to create Herdr tab for $phase"; printf 'Stopped at: %s\n' "$phase"; printf 'Log: %s\n' "$log_file"; return 1
   fi
@@ -436,49 +433,28 @@ validate_herdr_worktree() {
 
 }
 
-prepare_herdr_runtime() {
-  local source_house_rules="$repo_root/.opencode/HOUSE_RULES.md"
-  local runtime_dir="$herdr_worktree_path/.opencode/.bbq-runtime"
-  local runtime_house_rules="$runtime_dir/HOUSE_RULES.md"
-  local tracked_paths_file tracked_path normalized_tracked_path tracked_runtime temp_house_rules
+validate_herdr_phase_config() {
+  local relative_path
+  local -a required_paths=(
+    opencode.json
+    .opencode/HOUSE_RULES.md
+    .opencode/commands/bbq.pantry.md
+    .opencode/commands/bbq.prep.md
+    .opencode/commands/bbq.fire.md
+    .opencode/prompts/sous-chef.txt
+    .opencode/prompts/pitmaster.txt
+    .opencode/prompts/health-inspector.txt
+  )
 
-  if [ ! -f "$source_house_rules" ]; then
-    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf 'House Rules do not exist: %s\n' "$source_house_rules"; return 1
-  fi
-  if ! tracked_paths_file="$(mktemp "${TMPDIR:-/tmp}/bbq-runtime-index.XXXXXX")"; then
-    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Failed to allocate a tracked-path check file"; return 1
-  fi
-  if ! git -C "$herdr_worktree_path" ls-files -z > "$tracked_paths_file"; then
-    rm -f "$tracked_paths_file"
-    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Failed to inspect tracked worktree paths"; return 1
-  fi
-  tracked_runtime=""
-  while IFS= read -r -d '' tracked_path; do
-    normalized_tracked_path="$(printf '%s' "$tracked_path" | tr '[:upper:]' '[:lower:]')"
-    case "$normalized_tracked_path" in
-      .opencode/.bbq-runtime|.opencode/.bbq-runtime/*)
-        tracked_runtime="$tracked_path"
-        break
-        ;;
-    esac
-  done < "$tracked_paths_file"
-  rm -f "$tracked_paths_file"
-  if [ -n "$tracked_runtime" ]; then
-    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf 'Worktree runtime path must not contain tracked files: %s\n' "$tracked_runtime"; return 1
-  fi
-  if [ -L "$herdr_worktree_path/.opencode" ] || [ -L "$runtime_dir" ] || [ -L "$runtime_house_rules" ] || { [ -e "$runtime_house_rules" ] && [ ! -f "$runtime_house_rules" ]; }; then
-    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf 'Unsafe worktree runtime path: %s\n' "$runtime_house_rules"; return 1
-  fi
-  if ! mkdir -p "$runtime_dir"; then
-    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf 'Failed to create worktree runtime directory: %s\n' "$runtime_dir"; return 1
-  fi
-  if ! temp_house_rules="$(mktemp "$runtime_dir/.HOUSE_RULES.XXXXXX")"; then
-    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Failed to allocate a temporary House Rules file"; return 1
-  fi
-  if ! cp "$source_house_rules" "$temp_house_rules" || ! mv -f "$temp_house_rules" "$runtime_house_rules"; then
-    rm -f "$temp_house_rules"
-    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf 'Failed to prepare worktree-local House Rules: %s\n' "$runtime_house_rules"; return 1
-  fi
+  for relative_path in "${required_paths[@]}"; do
+    if [ ! -f "$herdr_worktree_path/$relative_path" ] || [ -L "$herdr_worktree_path/$relative_path" ] || \
+      ! git -C "$herdr_worktree_path" ls-files --error-unmatch "$relative_path" > /dev/null 2>&1; then
+      printf 'BBQ_WORKFLOW_RESULT: FAILED\n'
+      printf 'Required committed OpenCode configuration is missing from the ticket worktree: %s\n' "$relative_path"
+      printf '%s\n' "Commit the installed OpenCode configuration before running Herdr."
+      return 1
+    fi
+  done
 }
 
 resolve_new_branch_base() {
@@ -575,10 +551,10 @@ prepare_herdr_worktree() {
 
   if ! validate_herdr_worktree "$expected_path"; then return 1; fi
   if ! "$repo_root/.opencode/scripts/sync-worktree-local-files.sh" "$repo_root" "$herdr_worktree_path" >> "$station_log" 2>&1 || \
-    ! bash "$repo_root/.opencode/scripts/ensure-workflow-state-ignore.sh" "$herdr_worktree_path" >> "$station_log" 2>&1 || \
-    ! prepare_herdr_runtime >> "$station_log" 2>&1; then
+    ! bash "$repo_root/.opencode/scripts/ensure-workflow-state-ignore.sh" "$herdr_worktree_path" >> "$station_log" 2>&1; then
     printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Failed to prepare local files in the Herdr worktree"; printf 'Log: %s\n' "$station_log"; return 1
   fi
+  if ! validate_herdr_phase_config; then return 1; fi
   printf 'Ticket worktree: %s\n' "$herdr_worktree_path"
 }
 

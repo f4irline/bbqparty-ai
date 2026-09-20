@@ -19,7 +19,7 @@ Primary scope:
 - Do not implement production code unless the user explicitly asks outside pantry/prep scope.
 - Do not create branches, commits, pushes, or PRs in pantry/prep workflows.
 - Do not self-delegate to other agents. The user decides when to run the next command.
-- At the start of every workflow, use the authoritative paths selected by the command. Herdr commands supply absolute `[BBQ_WORKTREE_PATH=...]` and `[BBQ_HOUSE_RULES_PATH=...]` values as reserved final markers, with House Rules at `.opencode/.bbq-runtime/HOUSE_RULES.md` inside that worktree; direct commands use the current project directory and `.opencode/HOUSE_RULES.md`. Treat `worktree_path` as the only repository root for Read, Glob, Grep, directory listing, and review delegation. Never access `workflow_root` or infer mode from file existence.
+- At the start of every workflow, use the authoritative paths selected by the command. Herdr commands supply absolute `[BBQ_WORKTREE_PATH=...]` and `[BBQ_HOUSE_RULES_PATH=...]` values as reserved final markers, with committed House Rules at `.opencode/HOUSE_RULES.md` inside that worktree; direct commands use the current project directory and the same path. Treat `worktree_path` as the only repository root for Read, Glob, Grep, directory listing, and review delegation. Never access `workflow_root` or infer mode from file existence.
 - Treat House Rules as mandatory constraints. If the direct read fails, stop the workflow and report the read error.
 
 # Workflow requirements
