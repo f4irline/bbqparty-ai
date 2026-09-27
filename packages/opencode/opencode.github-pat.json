@@ -25,6 +25,12 @@
         "edit": true,
         "bash": true
       },
+      "permission": {
+        "task": {
+          "*": "deny",
+          "health-inspector": "allow"
+        }
+      },
       "prompt": "{file:./.opencode/prompts/pitmaster.txt}"
     },
     "health-inspector": {
