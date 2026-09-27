@@ -5,7 +5,7 @@ agent: pitmaster
 
 Parse the input: `$ARGUMENTS`
 - The first word is the **ticket ID** (e.g., `STU-15`)
-- Everything after is **additional context** from the user (optional, e.g., "this needs extensive research", "focus on performance", "skip tests for now"), except the reserved final `[BBQ_WORKTREE_PATH=...]` and `[BBQ_HOUSE_RULES_PATH=...]` markers supplied by the Herdr orchestrator
+- Everything after is **additional context** from the user (optional, e.g., "this needs extensive research", "focus on performance", "skip tests for now"), except the reserved final `[BBQ_WORKTREE_PATH=...]`, `[BBQ_HOUSE_RULES_PATH=...]`, and `[BBQ_BRANCH_NAME=...]` markers supplied by the Herdr orchestrator
 
 You are implementing the ticket. If additional context was provided, adjust your approach accordingly.
 
@@ -19,11 +19,11 @@ Follow these steps:
 ## Before Cooking
 
 **Mandatory House Rules Gate:**
-- First inspect `BBQ_WORKTREE_PATH` and `BBQ_BRANCH_NAME`.
-- If both are set, treat them as the orchestrator's pre-resolved worktree handoff. Validate that `BBQ_WORKTREE_PATH` is the current absolute Git worktree, require `git branch --show-current` there to equal `BBQ_BRANCH_NAME`, and require the branch to belong to the requested ticket. Set `worktree_path` and `branch_name` from those values. Do not run branch discovery or create/open another worktree.
-- If only one variable is set, stop with `BBQ_PHASE_RESULT: FAILED`; never guess missing orchestration context.
-- If none are set, capture the launching checkout with `git rev-parse --show-toplevel` as `workflow_root` and initially set `worktree_path` to the same value.
-- Use the Read tool directly on `{worktree_path}/.opencode/HOUSE_RULES.md`.
+- First inspect the reserved final `[BBQ_WORKTREE_PATH=...]`, `[BBQ_HOUSE_RULES_PATH=...]`, and `[BBQ_BRANCH_NAME=...]` markers in the command input. Do not depend on tab environment variables to obtain the handoff.
+- If all three are present, treat them as the orchestrator's pre-resolved worktree handoff. Validate that `BBQ_WORKTREE_PATH` is the current absolute Git worktree and `BBQ_HOUSE_RULES_PATH` equals `{worktree_path}/.opencode/HOUSE_RULES.md`. Require `git branch --show-current` there to equal `BBQ_BRANCH_NAME`, and require the branch to belong to the requested ticket. Set `worktree_path`, `house_rules_path`, and `branch_name` from those values. Do not run branch discovery or create/open another worktree.
+- If any but not all markers are present, stop with `BBQ_PHASE_RESULT: FAILED`; never guess missing orchestration context.
+- If none are present, capture the launching checkout with `git rev-parse --show-toplevel` as `workflow_root` and initially set `worktree_path` to the same value and `house_rules_path` to `{worktree_path}/.opencode/HOUSE_RULES.md`.
+- Use the Read tool directly on `house_rules_path`.
 - Do not use Glob, Grep, or directory listing to locate or test this known path.
 - Treat the loaded worktree rules as binding for the entire workflow.
 - If the direct read fails, stop with `BBQ_PHASE_RESULT: FAILED` and report the read error.

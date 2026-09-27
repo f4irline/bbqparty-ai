@@ -273,6 +273,9 @@ run_herdr_phase() {
   agent_name="bbq-${ticket_slug:0:10}-${phase}-${run_token:0:9}"
   agent_name="${agent_name:0:32}"
   phase_command_arguments="$command_arguments [BBQ_WORKTREE_PATH=$herdr_worktree_path] [BBQ_HOUSE_RULES_PATH=$herdr_worktree_path/.opencode/HOUSE_RULES.md]"
+  if [ "$phase" = "fire" ]; then
+    phase_command_arguments="$phase_command_arguments [BBQ_BRANCH_NAME=$herdr_branch_name]"
+  fi
   : > "$log_file"
   printf 'Starting %s for %s in Herdr agent %s\n' "$phase" "$ticket_id" "$agent_name"
 

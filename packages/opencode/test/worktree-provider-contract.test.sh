@@ -32,7 +32,7 @@ done
 fire_command="$opencode_root/commands/bbq.fire.md"
 for required in \
   'BBQ_WORKTREE_PATH' \
-  'BBQ_BRANCH_NAME' \
+  '[BBQ_BRANCH_NAME=...]' \
   'pre-resolved'; do
   if ! rg --fixed-strings --quiet -- "$required" "$fire_command"; then
     printf 'Missing orchestrated Fire handoff contract %s\n' "$required" >&2

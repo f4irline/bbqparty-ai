@@ -193,7 +193,11 @@ if [ "$(rg --count '^tab create ' "$temp_dir/calls")" -ne 3 ] || [ "$(rg --count
 fi
 
 for phase in pantry prep fire; do
-  if ! rg --fixed-strings --quiet "/bbq.$phase STU-15 focus on performance [BBQ_WORKTREE_PATH=$worktree_path] [BBQ_HOUSE_RULES_PATH=$worktree_house_rules] --wait" "$temp_dir/calls"; then
+  expected_arguments="STU-15 focus on performance [BBQ_WORKTREE_PATH=$worktree_path] [BBQ_HOUSE_RULES_PATH=$worktree_house_rules]"
+  if [ "$phase" = "fire" ]; then
+    expected_arguments="$expected_arguments [BBQ_BRANCH_NAME=chore/STU-15-herdr-session-placement]"
+  fi
+  if ! rg --fixed-strings --quiet "/bbq.$phase $expected_arguments --wait" "$temp_dir/calls"; then
     printf 'Herdr did not prompt the %s command with context\n' "$phase" >&2
     exit 1
   fi
