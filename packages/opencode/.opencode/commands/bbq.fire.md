@@ -87,6 +87,15 @@ After implementation, validation, learning capture, and staging are complete, us
 - If it returns `REVIEW_RESULT: CHANGES_REQUIRED`, resolve every blocking and important finding in `worktree_path`, update tests and durable documentation as needed, rerun relevant validation, restage the complete candidate, refresh `reviewed_tree` with `git write-tree`, update ignored workflow state, and spawn a fresh `health-inspector` review. Do not commit between review rounds.
 - Run at most 3 review-and-revision rounds total. If the work still does not pass after round 3, do not commit, push, create a PR, or move the ticket to "In Review". Stop and ask the user for further instructions, including the unresolved findings.
 
+## Final User-Facing Summary
+
+In the final response, include a **User-facing changes** section based on the actual implementation diff for the ticket, including any existing ticket-branch commits:
+
+- If there are user-facing changes, explain in plain language what users can now do or what they will notice compared with the previous behavior. Include relevant UI, API, CLI, configuration, or workflow changes; do not substitute a file list or technical implementation summary for the user impact.
+- If there are none, explicitly state **No user-facing changes** and explain why the changes do not affect users (for example, an internal refactor that preserves existing behavior or test-only changes).
+- Describe implemented behavior accurately without implying that a pushed branch or pull request is already deployed or available to users.
+- If the phase ends blocked or failed, distinguish changes already implemented from planned work that remains incomplete. If no implementation changes were made, say so and explain why.
+
 ## Terminal Result
 
 Include exactly one result line in every response:
