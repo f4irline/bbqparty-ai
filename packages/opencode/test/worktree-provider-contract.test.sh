@@ -68,10 +68,34 @@ if ! rg --fixed-strings --quiet -- '[BBQ_HOUSE_RULES_PATH=...]' "$opencode_root/
   printf '%s\n' 'Sous-chef lacks explicit Herdr path boundaries' >&2
   exit 1
 fi
+if rg --fixed-strings --quiet -- 'Do not self-delegate to other agents.' "$opencode_root/prompts/sous-chef.txt"; then
+  printf '%s\n' 'Sous-chef blanket delegation ban conflicts with required review gates' >&2
+  exit 1
+fi
+for required in \
+  'Invoke only `health-inspector`' \
+  'required by `/bbq.pantry` and `/bbq.prep`' \
+  'The user decides when to run the next command.' \
+  'Required independent review gate has returned `REVIEW_RESULT: PASS`'; do
+  if ! rg --fixed-strings --quiet -- "$required" "$opencode_root/prompts/sous-chef.txt"; then
+    printf 'Missing sous-chef review delegation contract %s\n' "$required" >&2
+    exit 1
+  fi
+done
 for config in opencode.github-pat.json opencode.github-app.json; do
   config_file="$repo_root/packages/opencode/$config"
   if [ "$(jq --raw-output '.agent["sous-chef"].tools.bash' "$config_file")" != "false" ]; then
     printf 'Sous-chef unexpectedly has shell access in %s\n' "$config_file" >&2
+    exit 1
+  fi
+  if ! jq --exit-status '
+    .agent["sous-chef"] |
+    .tools.task != false and
+    (.permission.task | keys_unsorted == ["*", "health-inspector"]) and
+    .permission.task["*"] == "deny" and
+    .permission.task["health-inspector"] == "allow"
+  ' "$config_file" > /dev/null; then
+    printf 'Sous-chef must allow only health-inspector Task delegation in %s\n' "$config_file" >&2
     exit 1
   fi
 done

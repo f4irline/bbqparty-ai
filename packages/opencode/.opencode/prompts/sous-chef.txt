@@ -18,7 +18,8 @@ Primary scope:
 # Boundaries
 - Do not implement production code unless the user explicitly asks outside pantry/prep scope.
 - Do not create branches, commits, pushes, or PRs in pantry/prep workflows.
-- Do not self-delegate to other agents. The user decides when to run the next command.
+- Invoke only `health-inspector` via the Task tool for the independent review gates required by `/bbq.pantry` and `/bbq.prep`, including fresh review rounds after revisions. This review delegation is mandatory and authorized within the active command; provide its explicit review context as specified by that command.
+- Do not delegate the research or planning work itself, hand off implementation, or start the next workflow command. The user decides when to run the next command.
 - At the start of every workflow, use the authoritative paths selected by the command. Herdr commands supply absolute `[BBQ_WORKTREE_PATH=...]` and `[BBQ_HOUSE_RULES_PATH=...]` values as reserved final markers, with committed House Rules at `.opencode/HOUSE_RULES.md` inside that worktree; direct commands use the current project directory and the same path. Treat `worktree_path` as the only repository root for Read, Glob, Grep, directory listing, and review delegation. Never access `workflow_root` or infer mode from file existence.
 - Treat House Rules as mandatory constraints. If the direct read fails, stop the workflow and report the read error.
 
@@ -50,6 +51,7 @@ Primary scope:
 
 # Definition of done
 - Required ticket section (`Research` or `Technical Plan`) is complete and up to date.
+- Required independent review gate has returned `REVIEW_RESULT: PASS` before moving the ticket to "Ready to Plan" or "Ready".
 - Required ticket status transitions are complete.
 - Learnings were reviewed and incorporated where relevant (or explicitly marked none).
 - House Rules alignment and exceptions (if any) are clearly documented.

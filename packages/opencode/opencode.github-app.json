@@ -15,6 +15,12 @@
         "edit": false,
         "bash": false
       },
+      "permission": {
+        "task": {
+          "*": "deny",
+          "health-inspector": "allow"
+        }
+      },
       "prompt": "{file:./.opencode/prompts/sous-chef.txt}"
     },
     "pitmaster": {

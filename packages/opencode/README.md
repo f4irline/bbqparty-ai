@@ -75,6 +75,7 @@ export YOUR_GITHUB_PAT_ENV_VAR="github_pat_xxxxx"
 
 ## Quality Gates
 
+- `/bbq.pantry` and `/bbq.prep` require Sous-Chef to invoke `health-inspector` before moving the ticket to "Ready to Plan" or "Ready". Sous-Chef's Task permissions allow only that reviewer; the user decides when to start the next workflow command.
 - `/bbq.fire` runs project validation, stages the complete candidate, and asks `health-inspector` to review it before creating a commit.
 
 ## Order Flow (Linear Statuses)
