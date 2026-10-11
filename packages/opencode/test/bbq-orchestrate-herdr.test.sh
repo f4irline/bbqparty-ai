@@ -263,18 +263,30 @@ fi
 rm -f "$temp_dir/calls" "$temp_dir/tab-counter"
 run_herdr --start-phase fire stu-15 > /dev/null
 
-rm -f "$temp_dir/calls" "$temp_dir/tab-counter"
-OPENCODE_CONFIG="$temp_dir/override.json" OPENCODE_CONFIG_DIR="$temp_dir/override-config" OPENCODE_CONFIG_CONTENT='{"agent":{"station":{"disable":true}}}' run_herdr --start-phase fire STU-15 > /dev/null
+station_config_is_isolated() {
+  rg --fixed-strings --line-regexp --quiet -- "station-env|$temp_dir/target/opencode.json|$temp_dir/target/.opencode|" "$1" &&
+    ! rg --fixed-strings --quiet -- '"disabled":true' "$1"
+}
+
+rm -f "$temp_dir/calls" "$temp_dir/tab-counter" "$temp_dir/opencode-calls"
+OPENCODE_CONFIG="$temp_dir/override.json" OPENCODE_CONFIG_DIR="$temp_dir/override-config" OPENCODE_CONFIG_CONTENT='{"agents":{"station":{"disabled":true}}}' run_herdr --start-phase fire STU-15 > /dev/null
 if ! rg --fixed-strings --quiet -- "--env OPENCODE_CONFIG=$worktree_path/opencode.json" "$temp_dir/calls" || \
   ! rg --fixed-strings --quiet -- "--env OPENCODE_CONFIG_DIR=$worktree_path/.opencode" "$temp_dir/calls" || \
   ! rg --fixed-strings --quiet -- '--env OPENCODE_CONFIG_CONTENT=' "$temp_dir/calls" || \
-  ! rg --fixed-strings --quiet -- "station-env|$temp_dir/target/opencode.json|$temp_dir/target/.opencode|" "$temp_dir/opencode-calls" || \
+  ! station_config_is_isolated "$temp_dir/opencode-calls" || \
   rg --fixed-strings --quiet -- "$temp_dir/override" "$temp_dir/calls" || \
-  rg --fixed-strings --quiet -- "$temp_dir/override" "$temp_dir/opencode-calls" || \
-  rg --fixed-strings --quiet -- '"disable":true' "$temp_dir/opencode-calls"; then
+  rg --fixed-strings --quiet -- "$temp_dir/override" "$temp_dir/opencode-calls"; then
   printf '%s\n' 'Inherited OpenCode overrides hid the station or worktree configuration' >&2
   exit 1
 fi
+
+for leaked_content in '{"agents":{"station":{"disabled":true}}}' '{"username":"leaked"}'; do
+  printf 'station-env|%s/opencode.json|%s/.opencode|%s\n' "$temp_dir/target" "$temp_dir/target" "$leaked_content" > "$temp_dir/leaked-station-env"
+  if station_config_is_isolated "$temp_dir/leaked-station-env"; then
+    printf '%s\n' 'Station isolation assertion accepted leaked config content' >&2
+    exit 1
+  fi
+done
 
 rm -f "$temp_dir/calls" "$temp_dir/tab-counter"
 run_herdr --start-phase prep STU-15 > /dev/null

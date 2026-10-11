@@ -101,7 +101,7 @@ Be specific about what will change and how. Preserve the original ticket descrip
 
 ## Technical Plan Review Gate
 
-After creating or revising the Technical Plan section, use the Task tool to spawn the `health-inspector` subagent. Give it the ticket ID, user context, the authoritative `worktree_path` and authoritative `house_rules_path` selected above, and this task: review the current Technical Plan against the full Linear ticket, Research section, relevant repository evidence, learnings, and House Rules.
+After creating or revising the Technical Plan section, use the `subagent` tool to spawn the `health-inspector` subagent. Give it the ticket ID, user context, the authoritative `worktree_path` and authoritative `house_rules_path` selected above, and this task: review the current Technical Plan against the full Linear ticket, Research section, relevant repository evidence, learnings, and House Rules.
 
 - If it returns `REVIEW_RESULT: PASS`, continue the workflow.
 - If it returns `REVIEW_RESULT: CHANGES_REQUIRED`, revise the Technical Plan to resolve every blocking and important finding, then spawn a fresh `health-inspector` review.

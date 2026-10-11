@@ -1,8 +1,8 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "agent": {
+  "agents": {
     "compaction": {
-      "prompt": "{file:./.opencode/prompts/compaction.txt}"
+      "system": "{file:./.opencode/prompts/compaction.txt}"
     },
     "station": {
       "description": "Non-interactive branch resolver for Herdr worktree orchestration"
@@ -10,79 +10,126 @@
     "sous-chef": {
       "description": "Research and planning agent for /bbq.pantry and /bbq.prep workflows",
       "mode": "primary",
-      "tools": {
-        "write": false,
-        "edit": false,
-        "bash": false
-      },
-      "permission": {
-        "task": {
-          "*": "deny",
-          "health-inspector": "allow"
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "subagent",
+          "resource": "health-inspector",
+          "effect": "allow"
         }
-      },
-      "prompt": "{file:./.opencode/prompts/sous-chef.txt}"
+      ],
+      "system": "{file:./.opencode/prompts/sous-chef.txt}"
     },
     "pitmaster": {
       "description": "Implementation and review-fix agent for /bbq.fire and /bbq.taste workflows",
       "mode": "primary",
-      "tools": {
-        "write": true,
-        "edit": true,
-        "bash": true
-      },
-      "permission": {
-        "task": {
-          "*": "deny",
-          "health-inspector": "allow"
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "subagent",
+          "resource": "health-inspector",
+          "effect": "allow"
         }
-      },
-      "prompt": "{file:./.opencode/prompts/pitmaster.txt}"
+      ],
+      "system": "{file:./.opencode/prompts/pitmaster.txt}"
     },
     "health-inspector": {
       "description": "Independent reviewer for BBQ research, plans, and implementations",
       "mode": "subagent",
-      "tools": {
-        "write": false,
-        "edit": false,
-        "bash": true
-      },
-      "permission": {
-        "edit": "deny",
-        "bash": {
-          "*": "deny",
-          "git *": "allow",
-          "git status * && git log *": "allow",
-          "git check-ignore * || true && git log *": "allow"
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "git *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git status * && git log *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git check-ignore * || true && git log *",
+          "effect": "allow"
         }
-      },
-      "prompt": "{file:./.opencode/prompts/health-inspector.txt}"
+      ],
+      "system": "{file:./.opencode/prompts/health-inspector.txt}"
     }
   },
   "mcp": {
-    "linear": {
-      "type": "remote",
-      "url": "https://mcp.linear.app/mcp",
-      "headers": {
-        "Authorization": "Bearer {env:YOUR_LINEAR_API_KEY_ENV_VAR}"
+    "servers": {
+      "linear": {
+        "type": "remote",
+        "url": "https://mcp.linear.app/mcp",
+        "headers": {
+          "Authorization": "Bearer {env:YOUR_LINEAR_API_KEY_ENV_VAR}"
+        },
+        "disabled": false
       },
-      "enabled": true
-    },
-    "github": {
-      "type": "local",
-      "command": [
-        "docker",
-        "run",
-        "--rm",
-        "-i",
-        "-e",
-        "GITHUB_PERSONAL_ACCESS_TOKEN",
-        "ghcr.io/github/github-mcp-server"
-      ],
-      "environment": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:YOUR_GITHUB_PAT_ENV_VAR}"
-      },
-      "enabled": true
+      "github": {
+        "type": "local",
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "-i",
+          "-e",
+          "GITHUB_PERSONAL_ACCESS_TOKEN",
+          "ghcr.io/github/github-mcp-server"
+        ],
+        "environment": {
+          "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:YOUR_GITHUB_PAT_ENV_VAR}"
+        },
+        "disabled": false
+      }
     }
   }
 }

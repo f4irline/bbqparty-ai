@@ -141,21 +141,23 @@ Add to your project's `opencode.json`:
 ```json
 {
   "mcp": {
-    "github": {
-      "type": "local",
-      "command": [
-        "docker", "run", "--rm", "-i",
-        "-e", "GITHUB_APP_ID",
-        "-e", "GITHUB_APP_INSTALLATION_ID",
-        "-e", "GITHUB_APP_PRIVATE_KEY",
-        "bbqparty/github-app-mcp"
-      ],
-      "environment": {
-        "GITHUB_APP_ID": "{env:BBQ_GITHUB_APP_ID}",
-        "GITHUB_APP_INSTALLATION_ID": "{env:BBQ_GITHUB_APP_INSTALLATION_ID}",
-        "GITHUB_APP_PRIVATE_KEY": "{env:BBQ_GITHUB_APP_PRIVATE_KEY}"
-      },
-      "enabled": true
+    "servers": {
+      "github": {
+        "type": "local",
+        "command": [
+          "docker", "run", "--rm", "-i",
+          "-e", "GITHUB_APP_ID",
+          "-e", "GITHUB_APP_INSTALLATION_ID",
+          "-e", "GITHUB_APP_PRIVATE_KEY",
+          "bbqparty/github-app-mcp"
+        ],
+        "environment": {
+          "GITHUB_APP_ID": "{env:BBQ_GITHUB_APP_ID}",
+          "GITHUB_APP_INSTALLATION_ID": "{env:BBQ_GITHUB_APP_INSTALLATION_ID}",
+          "GITHUB_APP_PRIVATE_KEY": "{env:BBQ_GITHUB_APP_PRIVATE_KEY}"
+        },
+        "disabled": false
+      }
     }
   }
 }
@@ -170,15 +172,17 @@ If running locally without Docker:
 ```json
 {
   "mcp": {
-    "github": {
-      "type": "local",
-      "command": ["node", "mcp/github-app/dist/index.js"],
-      "environment": {
-        "GITHUB_APP_ID": "{env:GITHUB_APP_ID}",
-        "GITHUB_APP_PRIVATE_KEY_PATH": "{env:GITHUB_APP_PRIVATE_KEY_PATH}",
-        "GITHUB_APP_INSTALLATION_ID": "{env:GITHUB_APP_INSTALLATION_ID}"
-      },
-      "enabled": true
+    "servers": {
+      "github": {
+        "type": "local",
+        "command": ["node", "mcp/github-app/dist/index.js"],
+        "environment": {
+          "GITHUB_APP_ID": "{env:GITHUB_APP_ID}",
+          "GITHUB_APP_PRIVATE_KEY_PATH": "{env:GITHUB_APP_PRIVATE_KEY_PATH}",
+          "GITHUB_APP_INSTALLATION_ID": "{env:GITHUB_APP_INSTALLATION_ID}"
+        },
+        "disabled": false
+      }
     }
   }
 }

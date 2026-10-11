@@ -84,18 +84,20 @@ for required in \
 done
 for config in opencode.github-pat.json opencode.github-app.json; do
   config_file="$repo_root/packages/opencode/$config"
-  if [ "$(jq --raw-output '.agent["sous-chef"].tools.bash' "$config_file")" != "false" ]; then
+  if ! jq --exit-status '
+    .agents["sous-chef"].permissions |
+    any(.action == "shell" and .resource == "*" and .effect == "deny")
+  ' "$config_file" > /dev/null; then
     printf 'Sous-chef unexpectedly has shell access in %s\n' "$config_file" >&2
     exit 1
   fi
   if ! jq --exit-status '
-    .agent["sous-chef"] |
-    .tools.task != false and
-    (.permission.task | keys_unsorted == ["*", "health-inspector"]) and
-    .permission.task["*"] == "deny" and
-    .permission.task["health-inspector"] == "allow"
+    [.agents["sous-chef"].permissions[] | select(.action == "subagent")] == [
+      {action: "subagent", resource: "*", effect: "deny"},
+      {action: "subagent", resource: "health-inspector", effect: "allow"}
+    ]
   ' "$config_file" > /dev/null; then
-    printf 'Sous-chef must allow only health-inspector Task delegation in %s\n' "$config_file" >&2
+    printf 'Sous-chef must allow only health-inspector subagent delegation in %s\n' "$config_file" >&2
     exit 1
   fi
 done
@@ -152,11 +154,11 @@ done
 
 for config in opencode.github-pat.json opencode.github-app.json; do
   config_file="$repo_root/packages/opencode/$config"
-  if [ "$(jq --raw-output '.agent.station.description' "$config_file")" != "Non-interactive branch resolver for Herdr worktree orchestration" ]; then
+  if [ "$(jq --raw-output '.agents.station.description' "$config_file")" != "Non-interactive branch resolver for Herdr worktree orchestration" ]; then
     printf 'Baseline station agent description is missing in %s\n' "$config_file" >&2
     exit 1
   fi
-  if [ "$(jq --raw-output '.agent.station.model // empty' "$config_file")" != "" ]; then
+  if [ "$(jq --raw-output '.agents.station.model // empty' "$config_file")" != "" ]; then
     printf 'Station agent pins a model in %s\n' "$config_file" >&2
     exit 1
   fi

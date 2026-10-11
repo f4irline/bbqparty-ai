@@ -1,16 +1,31 @@
 ---
 description: Non-interactive branch resolver for Herdr worktree orchestration
 mode: primary
-permission:
-  edit: deny
-  question: deny
-  task: deny
-  bash:
-    "*": deny
-    "git branch *": allow
-    "git fetch *": allow
-    "git for-each-ref *": allow
-    "git show-ref *": allow
+permissions:
+  - action: edit
+    resource: "*"
+    effect: deny
+  - action: question
+    resource: "*"
+    effect: deny
+  - action: subagent
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "git branch *"
+    effect: allow
+  - action: shell
+    resource: "git fetch *"
+    effect: allow
+  - action: shell
+    resource: "git for-each-ref *"
+    effect: allow
+  - action: shell
+    resource: "git show-ref *"
+    effect: allow
 ---
 
 IMPORTANT: You must NEVER generate or guess URLs unless you are confident the URL is necessary to help with programming tasks. You may use URLs provided by the user or found in local project files.

@@ -75,7 +75,7 @@ export YOUR_GITHUB_PAT_ENV_VAR="github_pat_xxxxx"
 
 ## Quality Gates
 
-- `/bbq.pantry` and `/bbq.prep` require Sous-Chef to invoke `health-inspector` before moving the ticket to "Ready to Plan" or "Ready". Sous-Chef's Task permissions allow only that reviewer; the user decides when to start the next workflow command.
+- `/bbq.pantry` and `/bbq.prep` require Sous-Chef to invoke `health-inspector` before moving the ticket to "Ready to Plan" or "Ready". Sous-Chef's `subagent` permissions allow only that reviewer; the user decides when to start the next workflow command.
 - `/bbq.fire` runs project validation, stages the complete candidate, and asks `health-inspector` to review it before creating a commit.
 
 ## Order Flow (Linear Statuses)
@@ -110,7 +110,7 @@ The script runs pantry, prep, and fire serially in the user’s terminal. It sta
 
 With `runtime: "herdr"`, run the script from a Herdr shell pane (`HERDR_ENV=1`). The runner first invokes the internal `/bbq.station` command as a headless OpenCode preflight, then creates or opens the resolved ticket worktree. Every selected phase gets a separate retained tab and OpenCode agent inside that worktree's Herdr workspace, so the sessions appear in its worktree view. Phase agents load `opencode.json`, `.opencode`, and House Rules directly from the ticket worktree; these files must be committed before running Herdr. Before submitting a `/bbq.*` command, the runner waits three seconds for OpenCode to initialize its project command registry. Set `BBQ_HERDR_COMMAND_READY_DELAY_SECONDS` to a non-negative integer to adjust that delay. The runner emits `herdr agent attach <name>` after completion or when a phase blocks, and keeps station output, JSON responses, and plain transcripts in `.opencode/.bbq-runs/` for inspection. Without `HERDR_ENV=1`, it announces native fallback and runs the existing loopback OpenCode backend.
 
-The `station` agent does not pin a model. Set `agent.station.model` in the target project's `opencode.json` when branch resolution should use a specific model; restart OpenCode after changing agent configuration.
+The `station` agent does not pin a model. Set `agents.station.model` in the target project's `opencode.json` when branch resolution should use a specific model; restart OpenCode after changing agent configuration.
 
 To use an existing loopback server instead, set `BBQ_OPENCODE_URL`; the script will not start or stop that server:
 
@@ -126,7 +126,7 @@ By default, the local server uses a random port and retries conflicts. Set `BBQ_
 |----------------|-------|
 | Command behavior | `.opencode/commands/*.md` |
 | Kitchen techniques | `.opencode/skills/*/SKILL.md` |
-| Custom agents | `opencode.json` (`agent`) |
+| Custom agents | `opencode.json` (`agents`) |
 | House rules template | `.opencode/templates/HOUSE_RULES.md` |
 | MCP connections | `opencode.json` |
 
