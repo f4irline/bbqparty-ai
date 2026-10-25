@@ -22,6 +22,9 @@ cat > "$temp_dir/bin/opencode" <<'EOF'
 set -euo pipefail
 
 case "$1" in
+  --version)
+    printf '%s\n' '1.18.29'
+    ;;
   serve)
     if [ "$#" -ne 5 ] || [ "$2" != "--hostname" ] || [ "$3" != "127.0.0.1" ] || [ "$4" != "--port" ] || [ "$5" != "$OPENCODE_PORT_EXPECTED" ]; then
       printf 'Unexpected serve invocation: %s\n' "$*" >&2

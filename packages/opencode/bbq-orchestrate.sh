@@ -53,6 +53,9 @@ fi
 server_url="${BBQ_OPENCODE_URL:-}"
 server_pid=""
 server_log="$run_dir/opencode-server.log"
+server_password="${OPENCODE_PASSWORD:-${OPENCODE_SERVER_PASSWORD:-}}"
+opencode_major=""
+opencode_env=(env)
 runtime=""
 herdr_branch_name=""
 herdr_worktree_path=""
@@ -75,6 +78,19 @@ require_command() {
     printf '%s is required but was not found in PATH\n' "$command_name" >&2
     exit 127
   fi
+}
+
+resolve_opencode_version() {
+  local version
+  if ! version="$(opencode --version)"; then
+    printf '%s\n' 'Could not determine the OpenCode version' >&2
+    return 1
+  fi
+  case "$version" in
+    1.*|"opencode v1."*) opencode_major=1 ;;
+    2.*|"opencode v2."*) opencode_major=2 ;;
+    *) printf 'Unsupported OpenCode version: %s\n' "$version" >&2; return 1 ;;
+  esac
 }
 
 resolve_runtime() {
@@ -184,6 +200,10 @@ start_server() {
       printf '%s\n' "BBQ_OPENCODE_URL must be a loopback URL such as http://127.0.0.1:4096" >&2
       return 1
     fi
+    if [ "$opencode_major" = 2 ] && [ -z "$server_password" ]; then
+      printf '%s\n' 'Set OPENCODE_PASSWORD to authenticate with BBQ_OPENCODE_URL' >&2
+      return 1
+    fi
     printf 'Using OpenCode server: %s\n' "$server_url"
     return 0
   fi
@@ -191,24 +211,30 @@ start_server() {
   for attempt in {1..5}; do
     if [ -n "$configured_port" ]; then server_port="$configured_port"; else server_port=$((20000 + RANDOM % 20000)); fi
     : > "$server_log"
-    opencode serve --hostname 127.0.0.1 --port "$server_port" > "$server_log" 2>&1 &
+    OPENCODE_PASSWORD="$server_password" "${opencode_env[@]}" opencode serve --hostname 127.0.0.1 --port "$server_port" > "$server_log" 2>&1 &
     server_pid=$!
+    reported_server_url=""
     for _ in {1..50}; do
       while IFS= read -r server_line; do
         case "$server_line" in
-          "opencode server listening on "*)
-            reported_server_url="${server_line#opencode server listening on }"
+          "opencode server listening on "*|"server listening on "*)
+            reported_server_url="${server_line#*server listening on }"
             if ! [[ "$reported_server_url" =~ ^http://127\.0\.0\.1:[0-9]+$ ]]; then
               kill "$server_pid" >/dev/null 2>&1 || true; wait "$server_pid" >/dev/null 2>&1 || true; server_pid=""
               printf '%s\n' "OpenCode server reported a non-loopback URL" >&2; printf 'Log: %s\n' "$server_log" >&2
               return 1
             fi
-            server_url="$reported_server_url"
-            printf 'Started OpenCode server: %s\n' "$server_url"
-            return 0
+            ;;
+          "server password "*)
+            if [ "$opencode_major" = 2 ]; then server_password="${server_line#server password }"; fi
             ;;
         esac
       done < "$server_log"
+      if [ -n "$reported_server_url" ] && { [ "$opencode_major" = 1 ] || [ -n "$server_password" ]; }; then
+        server_url="$reported_server_url"
+        printf 'Started OpenCode server: %s\n' "$server_url"
+        return 0
+      fi
       if ! kill -0 "$server_pid" >/dev/null 2>&1; then wait "$server_pid" >/dev/null 2>&1 || true; server_pid=""; break; fi
       sleep 0.1
     done
@@ -226,6 +252,71 @@ start_server() {
   return 1
 }
 
+v2_api() {
+  (
+    cd "$repo_root" || exit 1
+    OPENCODE_PASSWORD="$server_password" opencode api --server "$server_url" "$@"
+  )
+}
+
+v2_failure() {
+  printf 'BBQ_WORKFLOW_RESULT: FAILED\n'
+  printf '%s\n' "$1"
+  printf 'Stopped at: %s\nLog: %s\n' "$2" "$3"
+  return 1
+}
+
+run_v2_command() {
+  local phase="$1" command_name="$2" log_file="$3" text_file="$4"
+  local response session_id payload
+  local password_file="$run_dir/opencode-password"
+
+  : > "$log_file"
+  payload="$(jq -cn --arg directory "$repo_root" '{location:{directory:$directory}}')"
+  if ! response="$(v2_api post /api/session --data "$payload" 2>> "$log_file")"; then
+    printf '%s\n' "$response" >> "$log_file"
+    v2_failure 'Failed to create an OpenCode session' "$phase" "$log_file"; return 1
+  fi
+  printf '%s\n' "$response" >> "$log_file"
+  if ! session_id="$(jq -er '.data.id | strings | select(test("^ses_[A-Za-z0-9_-]+$"))' <<< "$response" 2>> "$log_file")"; then
+    v2_failure 'OpenCode did not return a valid V2 session ID' "$phase" "$log_file"; return 1
+  fi
+  printf 'Phase session: %s\n' "$session_id"
+  (umask 077; printf '%s' "$server_password" > "$password_file")
+  # shellcheck disable=SC2016 # Expand the password in the attaching terminal.
+  printf 'Connect in another terminal: OPENCODE_PASSWORD="$(cat %q)" opencode %q --server %q --session %q\n' "$password_file" "$repo_root" "$server_url" "$session_id"
+
+  payload="$(jq -cn --arg name "$command_name" --arg text "$command_arguments" '{name:$name,text:$text}')"
+  if ! v2_api post "/api/session/$session_id/command" --data "$payload" >> "$log_file" 2>&1; then
+    v2_failure 'OpenCode command failed' "$phase" "$log_file"; return 1
+  fi
+  # V2 command submission returns 204 before the agent finishes.
+  if ! v2_api post "/api/experimental/session/$session_id/wait" >> "$log_file" 2>&1; then
+    v2_failure 'Waiting for the OpenCode session failed' "$phase" "$log_file"; return 1
+  fi
+  if ! response="$(v2_api get "/api/session/$session_id" 2>> "$log_file")"; then
+    printf '%s\n' "$response" >> "$log_file"
+    v2_failure 'Failed to read the OpenCode session outcome' "$phase" "$log_file"; return 1
+  fi
+  printf '%s\n' "$response" >> "$log_file"
+  if ! jq -e '.data.outcome == "succeeded"' <<< "$response" > /dev/null 2>> "$log_file"; then
+    v2_failure 'OpenCode session failed or was interrupted' "$phase" "$log_file"; return 1
+  fi
+  if ! response="$(v2_api get "/api/session/$session_id/message?type=assistant&order=desc&limit=1" 2>> "$log_file")"; then
+    printf '%s\n' "$response" >> "$log_file"
+    v2_failure 'Failed to read the OpenCode command response' "$phase" "$log_file"; return 1
+  fi
+  printf '%s\n' "$response" >> "$log_file"
+  # Only the final assistant text counts: tool output and reasoning may quote markers.
+  if ! jq -er '
+    .data | select(type == "array" and length == 1) | .[0] |
+    select(.type == "assistant" and .error == null) |
+    [.content[] | select(.type == "text") | .text] | join("") | select(length > 0)
+  ' <<< "$response" > "$text_file" 2>> "$log_file"; then
+    v2_failure 'OpenCode returned an invalid command response' "$phase" "$log_file"; return 1
+  fi
+}
+
 run_http_phase() {
   local phase="$1" command_name="$2"
   local log_file="$run_dir/$phase.log" text_file="$run_dir/$phase.text"
@@ -233,6 +324,13 @@ run_http_phase() {
   local -a curl_args=(--fail --silent --show-error --request POST --header "x-opencode-directory: $repo_root" --header "Content-Type: application/json")
 
   printf 'Starting %s for %s\n' "$phase" "$ticket_id"
+  if [ "$opencode_major" = 2 ]; then
+    if ! run_v2_command "$phase" "$command_name" "$log_file" "$text_file" || \
+      ! evaluate_phase_result "$phase" "$text_file" "$log_file"; then return 1; fi
+    rm -f "$text_file"
+    printf 'Completed %s\n' "$phase"
+    return 0
+  fi
   if ! session_response="$(curl_request "${curl_args[@]}" --data '{}' "$server_url/session")"; then
     printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Failed to create an OpenCode session"; printf 'Stopped at: %s\n' "$phase"; return 1
   fi
@@ -333,6 +431,7 @@ run_herdr_phase() {
 
 resolve_station_branch() {
   local station_log="$run_dir/station.log"
+  local station_text="$station_log"
   local result_line normalized_result_line
   local station_result="" station_result_count=0
   local branch_value="" branch_count=0
@@ -344,9 +443,20 @@ resolve_station_branch() {
   if [ -n "$herdr_opencode_config" ]; then
     station_command+=("OPENCODE_CONFIG=$herdr_opencode_config")
   fi
-  station_command+=("OPENCODE_CONFIG_DIR=$herdr_opencode_config_dir" "OPENCODE_CONFIG_CONTENT=" opencode run --command bbq.station --dir "$repo_root" "$command_arguments")
-  if ! "${station_command[@]}" > "$station_log" 2>&1; then
-    printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Station command failed"; printf 'Log: %s\n' "$station_log"; return 1
+  station_command+=("OPENCODE_CONFIG_DIR=$herdr_opencode_config_dir" "OPENCODE_CONFIG_CONTENT=")
+  if [ "$opencode_major" = 2 ]; then
+    # Station needs its own server to apply the isolated configuration environment.
+    server_url=""
+    opencode_env=("${station_command[@]}")
+    station_text="$run_dir/station.text"
+    if ! start_server || ! run_v2_command station bbq.station "$station_log" "$station_text"; then return 1; fi
+    cleanup_server
+    server_pid=""
+  else
+    station_command+=(opencode run --command bbq.station --dir "$repo_root" "$command_arguments")
+    if ! "${station_command[@]}" > "$station_log" 2>&1; then
+      printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Station command failed"; printf 'Log: %s\n' "$station_log"; return 1
+    fi
   fi
 
   while IFS= read -r result_line; do
@@ -362,7 +472,7 @@ resolve_station_branch() {
         branch_value="${normalized_result_line#BBQ_STATION_BRANCH: }"
         ;;
     esac
-  done < "$station_log"
+  done < "$station_text"
 
   if [ "$station_result_count" -ne 1 ] || [ "$station_result" != "COMPLETE" ]; then
     printf 'BBQ_WORKFLOW_RESULT: FAILED\n'; printf '%s\n' "Station did not complete successfully"; printf 'Log: %s\n' "$station_log"; return 1
@@ -563,7 +673,7 @@ prepare_herdr_worktree() {
 
 run_http_workflow() {
   require_command opencode
-  require_command curl
+  if [ "$opencode_major" = 1 ]; then require_command curl; fi
   if ! start_server; then return 1; fi
   if [ "$start_phase" = "pantry" ] && ! run_http_phase pantry bbq.pantry; then return 1; fi
   if { [ "$start_phase" = "pantry" ] || [ "$start_phase" = "prep" ]; } && ! run_http_phase prep bbq.prep; then return 1; fi
@@ -590,6 +700,8 @@ run_herdr_workflow() {
 
 require_command jq
 if ! resolve_runtime; then exit 1; fi
+require_command opencode
+if ! resolve_opencode_version; then exit 1; fi
 if [ "$runtime" = "herdr" ]; then
   if ! run_herdr_workflow; then exit 1; fi
 else

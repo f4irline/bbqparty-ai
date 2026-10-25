@@ -33,6 +33,13 @@ cat > "$temp_dir/bin/opencode" <<'EOF'
 
 set -euo pipefail
 
+if [ "${OPENCODE_TEST_V2:-}" = "1" ]; then
+  exec bash "$OPENCODE_V2_FIXTURE" "$@"
+fi
+if [ "$1" = "--version" ]; then
+  printf '%s\n' '1.18.29'
+  exit 0
+fi
 printf '%s\n' "$*" >> "$OPENCODE_CALL_LOG"
 printf 'station-env|%s|%s|%s\n' "${OPENCODE_CONFIG:-}" "${OPENCODE_CONFIG_DIR:-}" "${OPENCODE_CONFIG_CONTENT:-}" >> "$OPENCODE_CALL_LOG"
 if [ "${OPENCODE_STATION_FAIL:-}" = "1" ]; then
@@ -385,6 +392,19 @@ if ! rg --fixed-strings --quiet 'diagnostic transcript' "$temp_dir/prompt-runs" 
   printf '%s\n' 'Prompt-failure transcript was not retained in the phase log' >&2
   exit 1
 fi
+
+# V2 must execute station through its API, preserving source config isolation.
+OPENCODE_TEST_V2=1 OPENCODE_V2_FIXTURE="$repo_root/packages/opencode/test/fixtures/opencode-v2.sh" \
+OPENCODE_V2_STATE="$temp_dir/v2-state" OPENCODE_V2_DIRECTORY="$temp_dir/target" OPENCODE_V2_STATION=1 \
+BBQ_OPENCODE_URL=http://127.0.0.1:4096 \
+OPENCODE_CONFIG="$temp_dir/override.json" OPENCODE_CONFIG_DIR="$temp_dir/override-config" \
+OPENCODE_CONFIG_CONTENT='{"agents":{"station":{"disabled":true}}}' \
+  run_herdr --start-phase fire STU-15 > "$temp_dir/v2-output"
+if ! rg --fixed-strings --quiet 'BBQ_WORKFLOW_RESULT: COMPLETE' "$temp_dir/v2-output"; then
+  printf '%s\n' 'OpenCode V2 station preflight failed' >&2
+  exit 1
+fi
+test -f "$temp_dir/v2-state/stopped"
 
 rm "$worktree_path/.opencode/commands/bbq.fire.md"
 rm -f "$temp_dir/calls" "$temp_dir/tab-counter"

@@ -102,7 +102,7 @@ script runs the selected phase and every later phase:
 ./bbq-orchestrate.sh --start-phase fire STU-15
 ```
 
-The script runs pantry, prep, and fire serially in the user’s terminal. It starts a loopback-only OpenCode server and prints a command for attaching the OpenCode TUI to each active phase. Run that command in another terminal when the agent needs an answer; the phase resumes in the same session and the script continues after its result marker. Each phase retains its existing review gate and status transitions. The script stops when a phase is blocked, fails, or emits no valid result marker, and stores its session and command response logs under `.opencode/.bbq-runs/`.
+The script runs pantry, prep, and fire serially in the user’s terminal. It detects OpenCode V1 or V2, starts a loopback-only OpenCode server, and prints a version-appropriate command for opening the OpenCode TUI on each active phase. Run that command in another terminal when the agent needs an answer; the phase resumes in the same session and the script continues after its result marker. Each phase retains its existing review gate and status transitions. The script stops when a phase is blocked, fails, or emits no valid result marker, and stores its session and command response logs under `.opencode/.bbq-runs/`. On V2 it submits commands through `opencode api`, waits for the session to finish, checks its outcome, and reads the final assistant text.
 
 ### Optional Herdr Runtime
 
@@ -110,15 +110,20 @@ The script runs pantry, prep, and fire serially in the user’s terminal. It sta
 
 With `runtime: "herdr"`, run the script from a Herdr shell pane (`HERDR_ENV=1`). The runner first invokes the internal `/bbq.station` command as a headless OpenCode preflight, then creates or opens the resolved ticket worktree. Every selected phase gets a separate retained tab and OpenCode agent inside that worktree's Herdr workspace, so the sessions appear in its worktree view. Phase agents load `opencode.json`, `.opencode`, and House Rules directly from the ticket worktree; these files must be committed before running Herdr. Before submitting a `/bbq.*` command, the runner waits three seconds for OpenCode to initialize its project command registry. Set `BBQ_HERDR_COMMAND_READY_DELAY_SECONDS` to a non-negative integer to adjust that delay. The runner emits `herdr agent attach <name>` after completion or when a phase blocks, and keeps station output, JSON responses, and plain transcripts in `.opencode/.bbq-runs/` for inspection. Without `HERDR_ENV=1`, it announces native fallback and runs the existing loopback OpenCode backend.
 
-The `station` agent does not pin a model. Set `agents.station.model` in the target project's `opencode.json` when branch resolution should use a specific model; restart OpenCode after changing agent configuration.
+On V2, the station preflight uses its own temporary loopback server so that its isolated configuration environment takes effect. Its output is retained in `station.text`, with API responses in `station.log`.
 
-To use an existing loopback server instead, set `BBQ_OPENCODE_URL`; the script will not start or stop that server:
+The `station` agent does not pin a model. Set `agents.station.model` in the target project's `opencode.json` when branch resolution should use a specific model. V2 reloads agent configuration automatically.
+
+For the native runtime, set `BBQ_OPENCODE_URL` to use an existing loopback server; the script will not start or stop that server:
 
 ```bash
 BBQ_OPENCODE_URL=http://127.0.0.1:4096 ./bbq-orchestrate.sh STU-15
 ```
 
-By default, the local server uses a random port and retries conflicts. Set `BBQ_OPENCODE_PORT` to use a fixed local port. The runner requires `curl` and `jq`. When `OPENCODE_SERVER_PASSWORD` is set, it forwards the password to its API requests without adding it to process arguments; set the same variable in the attaching terminal before running the printed command.
+By default, the local server uses a random port and retries conflicts. Set `BBQ_OPENCODE_PORT` to use a fixed local port. The runner requires `jq`, plus `curl` for V1.
+
+- **V2:** Set `OPENCODE_PASSWORD` to the existing server's password when using `BBQ_OPENCODE_URL`. For a runner-owned server, its generated password is captured automatically. `OPENCODE_SERVER_PASSWORD` is also accepted as a fallback. The printed TUI command reads the password from a private file in the run directory; credentials are never included in process arguments. The run directory contains server credentials as well as logs.
+- **V1:** When `OPENCODE_SERVER_PASSWORD` is set, the runner forwards it to API requests without adding it to process arguments. Set the same variable in the attaching terminal before running the printed command.
 
 ## Customizing the Menu
 
